@@ -145,9 +145,9 @@ export default function Page() {
         style={{
           display: 'flex',
           flexDirection: 'column',
-          height: '100vh',
+          minHeight: '100vh',
           width: '100vw',
-          overflow: 'hidden',
+          overflow: 'auto',
           background: 'var(--bg-primary)',
         }}
       >
@@ -162,7 +162,7 @@ export default function Page() {
           style={{
             flex: 1,
             display: 'flex',
-            overflow: 'hidden',
+            overflow: 'auto',
             minHeight: 0,
           }}
         >
@@ -193,7 +193,7 @@ export default function Page() {
               display: 'flex',
               flexDirection: 'column',
               minWidth: 0,
-              overflow: 'hidden',
+              overflow: 'auto',
               background: 'var(--bg-primary)',
             }}
           >
@@ -208,7 +208,7 @@ export default function Page() {
             <ModeSwitcher mode={workspaceMode} onSwitch={setWorkspaceMode} />
 
             {/* Workspace */}
-            <div style={{ flex: 1, overflow: 'hidden', minHeight: 0, display: 'flex' }}>
+            <div style={{ flex: 1, overflow: 'auto', minHeight: 0, display: 'flex' }}>
               {workspaceMode === 'TRANSCRIPT' ? (
                 <TranscriptWorkspace onTermClick={handleTermClick} />
               ) : workspaceMode === 'CHAT' ? (
@@ -653,7 +653,7 @@ function RightPanel({
       </div>
 
       {/* Tab content */}
-      <div role="tabpanel" style={{ flex: 1, overflow: 'hidden' }}>
+      <div role="tabpanel" style={{ flex: 1, overflow: 'auto' }}>
         {tab === 'GLOSSARY' && (
           <GlossaryPanel
             terms={glossary}

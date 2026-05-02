@@ -154,7 +154,7 @@
     font-family: var(--font-sans);
     font-size: 13px;
     line-height: 1.6;
-    overflow: hidden;
+    overflow: auto;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

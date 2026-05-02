@@ -288,7 +288,7 @@ function InstrumentDetail({ instrument, colorMode }: InstrumentDetailProps) {
         flexDirection: 'column',
         background: 'var(--bg-secondary)',
         borderLeft: '1px solid var(--border-subtle)',
-        overflow: 'hidden'
+        overflow: 'auto'
       }}
     >
       {/* Header strip - increased height */}
@@ -596,7 +596,7 @@ export function MarketsWorkspace({ instruments, colorMode, onToggleColorMode }: 
   const asOfTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} JST`
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
       {/* Panel header - editorial style */}
       <div
         style={{
@@ -669,7 +669,7 @@ export function MarketsWorkspace({ instruments, colorMode, onToggleColorMode }: 
       </div>
 
       {/* Main content: Grid + Detail */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', overflow: 'auto' }}>
         {/* Left Grid (60%) */}
         <div
           style={{

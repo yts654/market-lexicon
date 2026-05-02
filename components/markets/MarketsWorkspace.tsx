@@ -679,10 +679,12 @@ export function MarketsWorkspace({ instruments, colorMode, onToggleColorMode }: 
             gridTemplateColumns: 'repeat(4, 152px)',
             gridTemplateRows: 'repeat(4, 92px)',
             gap: '1px',
-            padding: '1px',
+            padding: '16px',
             background: 'var(--bg-primary)',
             overflow: 'auto',
-            flexShrink: 0
+            flexShrink: 0,
+            alignContent: 'center',
+            justifyContent: 'center'
           }}
         >
           {liveInstruments.map(inst => (

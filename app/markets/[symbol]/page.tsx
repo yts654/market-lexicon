@@ -224,12 +224,12 @@ function DetailHeader({
   return (
     <header
       style={{
-        height: '88px',
+        height: '100px',
         background: 'var(--bg-secondary)',
         borderBottom: '1px solid var(--border-subtle)',
         display: 'flex',
         alignItems: 'center',
-        padding: '0 24px',
+        padding: '0 32px',
         gap: '20px',
         flexShrink: 0
       }}
@@ -313,12 +313,12 @@ function DetailHeader({
       {/* Spacer */}
       <div style={{ flex: 1 }} />
 
-      {/* Price block - right aligned */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+      {/* Price block - right aligned with breathing room */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', marginRight: '8px' }}>
         <span
           style={{
             fontFamily: 'var(--font-serif)',
-            fontSize: '56px',
+            fontSize: '48px',
             fontWeight: 400,
             color: 'var(--text-primary)',
             fontVariantNumeric: 'tabular-nums',
@@ -332,7 +332,7 @@ function DetailHeader({
         <span
           style={{
             fontFamily: 'var(--font-serif)',
-            fontSize: '18px',
+            fontSize: '16px',
             fontWeight: 400,
             color: getPriceColor(instrument.change),
             fontVariantNumeric: 'tabular-nums',

@@ -20,7 +20,7 @@ import {
 import { MOCK_INSTRUMENTS, PriceColorMode } from '@/lib/market-data'
 
 type WorkspaceMode = 'TRANSCRIPT' | 'CHAT' | 'MARKETS'
-type SidebarTab = 'GLOSSARY' | 'MARKETS' | 'NOTES'
+type SidebarTab = 'GLOSSARY' | 'MARKETS' | 'NOTES' | 'SETTINGS'
 
 export default function Page() {
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('MARKETS')
@@ -131,6 +131,8 @@ export default function Page() {
         setRightPanelCollapsed(false)
         break
       case 'SET':
+        setSidebarTab('SETTINGS')
+        setRightPanelCollapsed(false)
         break
     }
   }
@@ -165,9 +167,13 @@ export default function Page() {
           }}
         >
           {/* Function Key Left Rail - Editorial Style */}
-          <FunctionKeyRail 
-            activeKey={workspaceMode === 'MARKETS' ? 'MKT' : workspaceMode === 'TRANSCRIPT' ? 'TXN' : 'TXN'} 
-            onSelect={handleFunctionKey} 
+          <FunctionKeyRail
+            activeKey={
+              sidebarTab === 'SETTINGS' && !rightPanelCollapsed ? 'SET' :
+              sidebarTab === 'GLOSSARY' && !rightPanelCollapsed ? 'DEF' :
+              workspaceMode === 'MARKETS' ? 'MKT' : 'TXN'
+            }
+            onSelect={handleFunctionKey}
           />
 
           {/* Left sidebar */}
@@ -570,7 +576,7 @@ function RightPanel({
             letterSpacing: '0.02em'
           }}
         >
-          {tab === 'MARKETS' ? 'Markets' : tab === 'GLOSSARY' ? 'Glossary' : 'Notes'}
+          {tab === 'MARKETS' ? 'Markets' : tab === 'GLOSSARY' ? 'Glossary' : tab === 'SETTINGS' ? 'Settings' : 'Notes'}
         </span>
       </button>
     )
@@ -600,9 +606,9 @@ function RightPanel({
           flexShrink: 0
         }}
       >
-        {(['MARKETS', 'GLOSSARY', 'NOTES'] as SidebarTab[]).map((t) => {
+        {(['MARKETS', 'GLOSSARY', 'NOTES', 'SETTINGS'] as SidebarTab[]).map((t) => {
           const active = tab === t
-          const label = t === 'MARKETS' ? 'Markets' : t === 'GLOSSARY' ? 'Glossary' : 'Notes'
+          const label = t === 'MARKETS' ? 'Markets' : t === 'GLOSSARY' ? 'Glossary' : t === 'SETTINGS' ? 'Settings' : 'Notes'
           return (
             <button
               key={t}
@@ -677,6 +683,243 @@ function RightPanel({
             Notes feature coming soon.
           </div>
         )}
+        {tab === 'SETTINGS' && (
+          <SettingsPanel
+            colorMode={colorMode}
+            onToggleColorMode={onToggleColorMode}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Settings Panel
+// ─────────────────────────────────────────────
+function SettingsPanel({
+  colorMode,
+  onToggleColorMode,
+}: {
+  colorMode: PriceColorMode
+  onToggleColorMode: () => void
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflowY: 'auto',
+        background: 'var(--bg-panel)',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid var(--border-medium)',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          SETTINGS
+        </span>
+      </div>
+
+      {/* Price Color Mode */}
+      <div
+        style={{
+          padding: '16px',
+          borderBottom: '1px solid var(--border-subtle)',
+        }}
+      >
+        <div
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--text-tertiary)',
+            marginBottom: '8px',
+          }}
+        >
+          価格カラーモード
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {(['jp', 'en'] as PriceColorMode[]).map((mode) => {
+            const active = colorMode === mode
+            return (
+              <button
+                key={mode}
+                onClick={onToggleColorMode}
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  background: active ? 'var(--bg-tertiary)' : 'transparent',
+                  border: '1px solid',
+                  borderColor: active ? 'var(--accent-gold)' : 'var(--border-subtle)',
+                  cursor: 'pointer',
+                  transition: 'all 150ms',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: mode === 'jp' ? 'var(--price-up)' : 'var(--price-up-western)',
+                    }}
+                  >
+                    ▲
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: mode === 'jp' ? 'var(--price-down)' : 'var(--price-down-western)',
+                    }}
+                  >
+                    ▼
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '10px',
+                    fontWeight: 500,
+                    color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                    letterSpacing: '0.06em',
+                  }}
+                >
+                  {mode === 'jp' ? '日本式' : '欧米式'}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        <p
+          style={{
+            margin: '8px 0 0',
+            fontFamily: 'var(--font-serif)',
+            fontStyle: 'italic',
+            fontSize: '11px',
+            color: 'var(--text-tertiary)',
+            lineHeight: 1.6,
+          }}
+        >
+          {colorMode === 'jp'
+            ? '日本式: 上昇=赤、下落=緑'
+            : '欧米式: 上昇=緑、下落=赤'}
+        </p>
+      </div>
+
+      {/* Keyboard Shortcuts */}
+      <div
+        style={{
+          padding: '16px',
+          borderBottom: '1px solid var(--border-subtle)',
+        }}
+      >
+        <div
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--text-tertiary)',
+            marginBottom: '12px',
+          }}
+        >
+          キーボードショートカット
+        </div>
+        {[
+          { keys: '⌘ K', desc: 'コマンドパレット' },
+          { keys: '⌘ N', desc: '新規セッション' },
+          { keys: '⌘ 1', desc: 'トランスクリプト' },
+          { keys: '⌘ 2', desc: 'チャット' },
+          { keys: '⌘ 3', desc: 'マーケット' },
+          { keys: '⌘ B', desc: '左サイドバー切替' },
+          { keys: '⌘ G', desc: '右パネル切替' },
+        ].map(({ keys, desc }) => (
+          <div
+            key={keys}
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '6px 0',
+              borderBottom: '1px solid var(--border-subtle)',
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontSize: '11px',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              {desc}
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                color: 'var(--text-tertiary)',
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-subtle)',
+                padding: '2px 6px',
+              }}
+            >
+              {keys}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* About */}
+      <div style={{ padding: '16px' }}>
+        <div
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--text-tertiary)',
+            marginBottom: '8px',
+          }}
+        >
+          ABOUT
+        </div>
+        <p
+          style={{
+            margin: 0,
+            fontFamily: 'var(--font-serif)',
+            fontStyle: 'italic',
+            fontSize: '12px',
+            color: 'var(--text-tertiary)',
+            lineHeight: 1.7,
+          }}
+        >
+          Market Lexicon — 金融英語学習ツール
+        </p>
       </div>
     </div>
   )

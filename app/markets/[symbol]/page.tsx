@@ -10,7 +10,9 @@ import {
   formatValue,
   formatChange,
   formatChangePct,
-  PriceColorMode
+  getPriceColor,
+  PriceColorMode,
+  PRICE_COLOR_MODE_KEY
 } from '@/lib/market-data'
 import { INSTRUMENT_EDUCATION, getRelatedInstruments } from '@/lib/instrument-education'
 
@@ -34,7 +36,7 @@ export default function InstrumentDetailPage() {
 
   // Load color mode from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('marketLexicon_priceColorMode')
+    const saved = localStorage.getItem(PRICE_COLOR_MODE_KEY)
     if (saved === 'jp' || saved === 'en') {
       setColorMode(saved)
     }
@@ -211,14 +213,6 @@ function DetailHeader({
     return () => clearInterval(interval)
   }, [])
 
-  const getPriceColor = (change: number) => {
-    if (change === 0) return 'var(--price-flat)'
-    if (colorMode === 'jp') {
-      return change > 0 ? 'var(--price-up)' : 'var(--price-down)'
-    }
-    return change > 0 ? 'var(--price-up-western)' : 'var(--price-down-western)'
-  }
-
   const arrow = instrument.change > 0 ? '▲' : instrument.change < 0 ? '▽' : ''
 
   return (
@@ -341,7 +335,7 @@ function DetailHeader({
             fontFamily: 'var(--font-serif)',
             fontSize: '16px',
             fontWeight: 400,
-            color: getPriceColor(instrument.change),
+            color: getPriceColor(instrument.change, colorMode),
             fontVariantNumeric: 'tabular-nums',
             display: 'flex',
             alignItems: 'center',
@@ -1100,13 +1094,7 @@ function RelatedInstruments({
 }) {
   if (instruments.length === 0) return null
 
-  const getPriceColor = (change: number) => {
-    if (change === 0) return 'var(--price-flat)'
-    if (colorMode === 'jp') {
-      return change > 0 ? 'var(--price-up)' : 'var(--price-down)'
-    }
-    return change > 0 ? 'var(--price-up-western)' : 'var(--price-down-western)'
-  }
+
 
   return (
     <section
@@ -1196,7 +1184,7 @@ function RelatedInstruments({
                   fontFamily: 'var(--font-mono)',
                   fontSize: '11px',
                   fontWeight: 400,
-                  color: getPriceColor(inst.change),
+                  color: getPriceColor(inst.change, colorMode),
                   fontVariantNumeric: 'tabular-nums',
                   marginBottom: '8px'
                 }}
@@ -1208,7 +1196,7 @@ function RelatedInstruments({
               <div style={{ height: '18px', width: '100%' }}>
                 <Sparklines data={inst.sparklineData} width={156} height={18} margin={0}>
                   <SparklinesLine
-                    color={getPriceColor(inst.change)}
+                    color={getPriceColor(inst.change, colorMode)}
                     style={{ strokeWidth: 1.5, fill: 'none' }}
                   />
                 </Sparklines>

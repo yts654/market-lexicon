@@ -9,7 +9,8 @@ import {
   formatChange,
   formatChangePct,
   TIMEFRAMES,
-  PriceColorMode
+  PriceColorMode,
+  getPriceColor
 } from '@/lib/market-data'
 
 // Dynamically import Sparklines with SSR disabled to avoid hydration mismatch
@@ -38,15 +39,7 @@ interface InstrumentTileProps {
 }
 
 function InstrumentTile({ instrument, selected, onSelect, colorMode, isUpdating }: InstrumentTileProps) {
-  const getPriceColor = (change: number) => {
-    if (change === 0) return 'var(--price-flat)'
-    if (colorMode === 'jp') {
-      return change > 0 ? 'var(--price-up)' : 'var(--price-down)'
-    }
-    return change > 0 ? 'var(--price-up-western, #4A8B6E)' : 'var(--price-down-western, #A03A42)'
-  }
-
-  const sparkColor = getPriceColor(instrument.change)
+  const sparkColor = getPriceColor(instrument.change, colorMode)
   const arrow = instrument.change > 0 ? '▵' : instrument.change < 0 ? '▿' : ''
   const urlSymbol = instrument.symbol.replace(/\//g, '')
 
@@ -139,7 +132,7 @@ function InstrumentTile({ instrument, selected, onSelect, colorMode, isUpdating 
           fontFamily: 'var(--font-mono)',
           fontSize: '11px',
           fontWeight: 400,
-          color: getPriceColor(instrument.change),
+          color: getPriceColor(instrument.change, colorMode),
           textAlign: 'right',
           fontVariantNumeric: 'tabular-nums',
           marginBottom: '6px',
@@ -177,14 +170,6 @@ function InstrumentDetail({ instrument, colorMode }: InstrumentDetailProps) {
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstanceRef = useRef<ReturnType<typeof import('lightweight-charts').createChart> | null>(null)
   const [activeTimeframe, setActiveTimeframe] = useState('1D')
-
-  const getPriceColor = (change: number) => {
-    if (change === 0) return 'var(--price-flat)'
-    if (colorMode === 'jp') {
-      return change > 0 ? 'var(--price-up)' : 'var(--price-down)'
-    }
-    return change > 0 ? 'var(--price-up-western, #4A8B6E)' : 'var(--price-down-western, #A03A42)'
-  }
 
   const upColor = colorMode === 'jp' ? '#B43A42' : '#4A8B6E'
   const downColor = colorMode === 'jp' ? '#2D7A6E' : '#A03A42'
@@ -402,7 +387,7 @@ function InstrumentDetail({ instrument, colorMode }: InstrumentDetailProps) {
             fontFamily: 'var(--font-mono)',
             fontSize: '14px',
             fontWeight: 400,
-            color: getPriceColor(instrument.change),
+            color: getPriceColor(instrument.change, colorMode),
             fontVariantNumeric: 'tabular-nums',
             marginTop: '8px',
             display: 'flex',
@@ -557,9 +542,11 @@ export function MarketsWorkspace({ instruments, colorMode, onToggleColorMode }: 
 
   // Simulate live ticking with opacity transition instead of flash
   useEffect(() => {
+    let clearTimeout_: ReturnType<typeof setTimeout> | undefined
+
     const interval = setInterval(() => {
       const updating = new Set<string>()
-      
+
       setLiveInstruments(prev => {
         const newInstruments = prev.map(inst => {
           const tick = (Math.random() - 0.5) * 0.0006 * inst.value
@@ -583,17 +570,17 @@ export function MarketsWorkspace({ instruments, colorMode, onToggleColorMode }: 
 
       setUpdatingSymbols(updating)
 
-      // Clear updating state after animation
-      setTimeout(() => {
+      if (clearTimeout_) clearTimeout(clearTimeout_)
+      clearTimeout_ = setTimeout(() => {
         setUpdatingSymbols(new Set())
       }, 600)
     }, 1000)
 
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      if (clearTimeout_) clearTimeout(clearTimeout_)
+    }
   }, [])
-
-  const now = new Date()
-  const asOfTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} JST`
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>

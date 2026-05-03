@@ -17,10 +17,33 @@ import {
   GlossaryTerm,
   Session,
 } from '@/lib/market-lexicon-data'
-import { MOCK_INSTRUMENTS, PriceColorMode } from '@/lib/market-data'
+import { MOCK_INSTRUMENTS, PriceColorMode, PRICE_COLOR_MODE_KEY } from '@/lib/market-data'
 
 type WorkspaceMode = 'TRANSCRIPT' | 'CHAT' | 'MARKETS'
 type SidebarTab = 'GLOSSARY' | 'MARKETS' | 'NOTES' | 'SETTINGS'
+
+const TAB_LABELS: Record<SidebarTab, string> = {
+  MARKETS: 'Markets',
+  GLOSSARY: 'Glossary',
+  NOTES: 'Notes',
+  SETTINGS: 'Settings',
+}
+
+const SECTION_META: Record<WorkspaceMode, { numeral: string; subtitle: string; title: string }> = {
+  MARKETS: { numeral: 'I', subtitle: 'GLOBAL MARKETS', title: 'Asia · United States · Europe' },
+  TRANSCRIPT: { numeral: 'II', subtitle: 'TRANSCRIPTS', title: 'Financial English Learning' },
+  CHAT: { numeral: 'III', subtitle: 'CHAT', title: 'Interactive Analysis' },
+}
+
+const KEYBOARD_SHORTCUTS = [
+  { keys: '⌘ K', desc: 'コマンドパレット' },
+  { keys: '⌘ N', desc: '新規セッション' },
+  { keys: '⌘ 1', desc: 'トランスクリプト' },
+  { keys: '⌘ 2', desc: 'チャット' },
+  { keys: '⌘ 3', desc: 'マーケット' },
+  { keys: '⌘ B', desc: '左サイドバー切替' },
+  { keys: '⌘ G', desc: '右パネル切替' },
+] as const
 
 export default function Page() {
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('MARKETS')
@@ -35,18 +58,22 @@ export default function Page() {
   const [dailyTerm] = useState(MOCK_GLOSSARY[Math.floor(Math.random() * MOCK_GLOSSARY.length)])
   const [priceColorMode, setPriceColorMode] = useState<PriceColorMode>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('marketLexicon.priceColorMode') as PriceColorMode) || 'jp'
+      return (localStorage.getItem(PRICE_COLOR_MODE_KEY) as PriceColorMode) || 'jp'
     }
     return 'jp'
   })
 
   // Persist color mode
   useEffect(() => {
-    localStorage.setItem('marketLexicon.priceColorMode', priceColorMode)
+    localStorage.setItem(PRICE_COLOR_MODE_KEY, priceColorMode)
   }, [priceColorMode])
 
   const toggleColorMode = () => {
     setPriceColorMode(prev => prev === 'jp' ? 'en' : 'jp')
+  }
+
+  const setColorMode = (mode: PriceColorMode) => {
+    setPriceColorMode(mode)
   }
 
   // Keyboard shortcuts
@@ -198,11 +225,7 @@ export default function Page() {
             }}
           >
             {/* Section Marker */}
-            <SectionMarker 
-              numeral={workspaceMode === 'MARKETS' ? 'I' : workspaceMode === 'TRANSCRIPT' ? 'II' : 'III'}
-              subtitle={workspaceMode === 'MARKETS' ? 'GLOBAL MARKETS' : workspaceMode === 'TRANSCRIPT' ? 'TRANSCRIPTS' : 'CHAT'}
-              title={workspaceMode === 'MARKETS' ? 'Asia · United States · Europe' : workspaceMode === 'TRANSCRIPT' ? 'Financial English Learning' : 'Interactive Analysis'}
-            />
+            <SectionMarker {...SECTION_META[workspaceMode]} />
 
             {/* Mode switcher tabs */}
             <ModeSwitcher mode={workspaceMode} onSwitch={setWorkspaceMode} />
@@ -235,6 +258,7 @@ export default function Page() {
             instruments={MOCK_INSTRUMENTS}
             colorMode={priceColorMode}
             onToggleColorMode={toggleColorMode}
+            onSetColorMode={setColorMode}
           />
         </div>
 
@@ -474,7 +498,7 @@ function FunctionKeyRail({ activeKey, onSelect }: { activeKey: string; onSelect:
                 fontSize: '11px',
                 fontWeight: 400,
                 color: isActive ? 'var(--text-primary)' : 'var(--accent-gold-dim)',
-                fontStyle: isActive ? 'normal' : 'normal'
+                fontStyle: 'normal'
               }}
             >
               {numeral}
@@ -536,7 +560,8 @@ function RightPanel({
   activeTermId,
   instruments,
   colorMode,
-  onToggleColorMode
+  onToggleColorMode,
+  onSetColorMode
 }: {
   tab: SidebarTab
   onTabChange: (tab: SidebarTab) => void
@@ -548,6 +573,7 @@ function RightPanel({
   instruments: typeof MOCK_INSTRUMENTS
   colorMode: PriceColorMode
   onToggleColorMode: () => void
+  onSetColorMode: (mode: PriceColorMode) => void
 }) {
   if (collapsed) {
     return (
@@ -576,7 +602,7 @@ function RightPanel({
             letterSpacing: '0.02em'
           }}
         >
-          {tab === 'MARKETS' ? 'Markets' : tab === 'GLOSSARY' ? 'Glossary' : tab === 'SETTINGS' ? 'Settings' : 'Notes'}
+          {TAB_LABELS[tab]}
         </span>
       </button>
     )
@@ -608,7 +634,7 @@ function RightPanel({
       >
         {(['MARKETS', 'GLOSSARY', 'NOTES', 'SETTINGS'] as SidebarTab[]).map((t) => {
           const active = tab === t
-          const label = t === 'MARKETS' ? 'Markets' : t === 'GLOSSARY' ? 'Glossary' : t === 'SETTINGS' ? 'Settings' : 'Notes'
+          const label = TAB_LABELS[t]
           return (
             <button
               key={t}
@@ -686,7 +712,7 @@ function RightPanel({
         {tab === 'SETTINGS' && (
           <SettingsPanel
             colorMode={colorMode}
-            onToggleColorMode={onToggleColorMode}
+            onSetColorMode={onSetColorMode}
           />
         )}
       </div>
@@ -699,10 +725,10 @@ function RightPanel({
 // ─────────────────────────────────────────────
 function SettingsPanel({
   colorMode,
-  onToggleColorMode,
+  onSetColorMode,
 }: {
   colorMode: PriceColorMode
-  onToggleColorMode: () => void
+  onSetColorMode: (mode: PriceColorMode) => void
 }) {
   return (
     <div
@@ -761,7 +787,7 @@ function SettingsPanel({
             return (
               <button
                 key={mode}
-                onClick={onToggleColorMode}
+                onClick={() => onSetColorMode(mode)}
                 style={{
                   flex: 1,
                   padding: '10px 12px',
@@ -849,15 +875,7 @@ function SettingsPanel({
         >
           キーボードショートカット
         </div>
-        {[
-          { keys: '⌘ K', desc: 'コマンドパレット' },
-          { keys: '⌘ N', desc: '新規セッション' },
-          { keys: '⌘ 1', desc: 'トランスクリプト' },
-          { keys: '⌘ 2', desc: 'チャット' },
-          { keys: '⌘ 3', desc: 'マーケット' },
-          { keys: '⌘ B', desc: '左サイドバー切替' },
-          { keys: '⌘ G', desc: '右パネル切替' },
-        ].map(({ keys, desc }) => (
+        {KEYBOARD_SHORTCUTS.map(({ keys, desc }) => (
           <div
             key={keys}
             style={{

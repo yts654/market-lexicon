@@ -559,6 +559,16 @@ export function getArrow(change: number): string {
   return '–'
 }
 
+export function getPriceColor(change: number, colorMode: PriceColorMode): string {
+  if (change === 0) return 'var(--price-flat)'
+  if (colorMode === 'jp') {
+    return change > 0 ? 'var(--price-up)' : 'var(--price-down)'
+  }
+  return change > 0 ? 'var(--price-up-western)' : 'var(--price-down-western)'
+}
+
+export const PRICE_COLOR_MODE_KEY = 'marketLexicon.priceColorMode'
+
 // Market status
 export function getMarketStatus(): { isOpen: boolean; label: string } {
   const now = new Date()

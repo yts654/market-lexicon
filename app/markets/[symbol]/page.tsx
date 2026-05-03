@@ -224,63 +224,66 @@ function DetailHeader({
   return (
     <header
       style={{
-        height: '100px',
         background: 'var(--bg-secondary)',
         borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 32px',
-        gap: '20px',
         flexShrink: 0
       }}
     >
-      {/* Back button */}
-      <Link
-        href="/"
+      {/* Top row: Back + Symbol info */}
+      <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          textDecoration: 'none'
+          padding: '12px 32px 8px',
+          gap: '16px'
         }}
       >
-        <span
+        {/* Back button */}
+        <Link
+          href="/"
           style={{
-            fontFamily: 'var(--font-serif)',
-            fontStyle: 'italic',
-            fontSize: '18px',
-            color: 'var(--accent-gold)'
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            textDecoration: 'none'
           }}
         >
-          ‹
-        </span>
-        <span
+          <span
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
+              fontSize: '18px',
+              color: 'var(--accent-gold)'
+            }}
+          >
+            ‹
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
+              fontSize: '14px',
+              color: 'var(--text-secondary)'
+            }}
+          >
+            Markets
+          </span>
+        </Link>
+
+        {/* Vertical divider */}
+        <div
           style={{
-            fontFamily: 'var(--font-serif)',
-            fontStyle: 'italic',
-            fontSize: '14px',
-            color: 'var(--text-secondary)'
+            width: '1px',
+            height: '32px',
+            background: 'var(--border-subtle)'
           }}
-        >
-          Markets
-        </span>
-      </Link>
+        />
 
-      {/* Vertical divider */}
-      <div
-        style={{
-          width: '1px',
-          height: '56px',
-          background: 'var(--border-subtle)'
-        }}
-      />
-
-      {/* Symbol block */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        {/* Symbol + name */}
         <span
           style={{
             fontFamily: 'var(--font-serif)',
-            fontSize: '24px',
+            fontSize: '20px',
             fontWeight: 400,
             color: 'var(--text-primary)',
             letterSpacing: '-0.01em'
@@ -301,7 +304,6 @@ function DetailHeader({
         <span
           style={{
             fontFamily: 'var(--font-jp)',
-            fontStyle: 'italic',
             fontSize: '12px',
             color: 'var(--text-tertiary)'
           }}
@@ -310,15 +312,20 @@ function DetailHeader({
         </span>
       </div>
 
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
-
-      {/* Price block - right aligned with breathing room */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', marginRight: '8px' }}>
+      {/* Bottom row: Price block - left aligned, prominent */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: '16px',
+          padding: '0 32px 14px',
+          flexWrap: 'wrap'
+        }}
+      >
         <span
           style={{
             fontFamily: 'var(--font-serif)',
-            fontSize: '48px',
+            fontSize: '40px',
             fontWeight: 400,
             color: 'var(--text-primary)',
             fontVariantNumeric: 'tabular-nums',

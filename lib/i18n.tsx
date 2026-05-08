@@ -163,6 +163,25 @@ export const dict: Dict = {
     en: 'Toggle Right Panel',
   },
   'settings.about': { jp: 'このアプリについて', en: 'ABOUT' },
+
+  // ─── /markets/[symbol] page ───
+  'instrument.understanding': { jp: 'を理解する', en: 'Understanding' },
+  'instrument.subtitle': {
+    jp: '定義 · 計算 · 値動き要因 · 解釈',
+    en: 'Definition · Calculation · Drivers · Interpretation',
+  },
+  'instrument.related': { jp: '関連銘柄', en: 'Related Instruments' },
+  'instrument.keyStats': { jp: '主要指標', en: 'KEY STATISTICS' },
+  'instrument.todayRange': { jp: '本日のレンジ', en: "TODAY'S RANGE" },
+  'instrument.weekRange': { jp: '52週レンジ', en: '52-WEEK RANGE' },
+  'instrument.stats.open': { jp: '始値', en: 'Open' },
+  'instrument.stats.high': { jp: '高値', en: 'High' },
+  'instrument.stats.low': { jp: '安値', en: 'Low' },
+  'instrument.stats.prevClose': { jp: '前日終値', en: 'Prev Close' },
+  'instrument.stats.week52High': { jp: '52週高値', en: '52W High' },
+  'instrument.stats.week52Low': { jp: '52週安値', en: '52W Low' },
+  'instrument.stats.volume': { jp: '出来高', en: 'Volume' },
+  'instrument.stats.avgVolume': { jp: '平均出来高(10日)', en: 'Avg Vol (10D)' },
 }
 
 export type DictKey = keyof typeof dict

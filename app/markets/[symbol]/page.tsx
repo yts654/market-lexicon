@@ -14,12 +14,14 @@ import {
   PriceColorMode,
   PRICE_COLOR_MODE_KEY
 } from '@/lib/market-data'
-import { INSTRUMENT_EDUCATION, getRelatedInstruments } from '@/lib/instrument-education'
+import { getInstrumentEducation, getRelatedInstruments, EDUCATION_SECTION_LABELS } from '@/lib/instrument-education'
+import { useT } from '@/lib/i18n'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Page Component
 // ─────────────────────────────────────────────────────────────────────────────
 export default function InstrumentDetailPage() {
+  const { t, lang } = useT()
   const params = useParams()
   const symbolParam = params.symbol as string
   
@@ -104,7 +106,7 @@ export default function InstrumentDetailPage() {
     )
   }
 
-  const education = INSTRUMENT_EDUCATION[liveInstrument.symbol] || INSTRUMENT_EDUCATION['NKY']
+  const education = getInstrumentEducation(liveInstrument.symbol, lang)
   const relatedSymbols = getRelatedInstruments(liveInstrument.symbol)
   const relatedInstruments = relatedSymbols
     .map(s => MOCK_INSTRUMENTS.find(i => i.symbol === s))
@@ -720,15 +722,16 @@ function StatsRegion({
   instrument: Instrument
   colorMode: PriceColorMode
 }) {
+  const { t } = useT()
   const stats = [
-    { label: 'Open', value: formatValue(instrument.open, instrument.decimals, instrument.isYield) },
-    { label: 'High', value: formatValue(instrument.high, instrument.decimals, instrument.isYield) },
-    { label: 'Low', value: formatValue(instrument.low, instrument.decimals, instrument.isYield) },
-    { label: 'Prev Close', value: formatValue(instrument.prevClose, instrument.decimals, instrument.isYield) },
-    { label: '52W High', value: formatValue(instrument.week52High, instrument.decimals, instrument.isYield) },
-    { label: '52W Low', value: formatValue(instrument.week52Low, instrument.decimals, instrument.isYield) },
-    { label: 'Volume', value: instrument.volume > 0 ? new Intl.NumberFormat('en-US', { notation: 'compact' }).format(instrument.volume) : 'N/A' },
-    { label: 'Avg Vol (10D)', value: instrument.avgVolume > 0 ? new Intl.NumberFormat('en-US', { notation: 'compact' }).format(instrument.avgVolume) : 'N/A' }
+    { label: t('instrument.stats.open'), value: formatValue(instrument.open, instrument.decimals, instrument.isYield) },
+    { label: t('instrument.stats.high'), value: formatValue(instrument.high, instrument.decimals, instrument.isYield) },
+    { label: t('instrument.stats.low'), value: formatValue(instrument.low, instrument.decimals, instrument.isYield) },
+    { label: t('instrument.stats.prevClose'), value: formatValue(instrument.prevClose, instrument.decimals, instrument.isYield) },
+    { label: t('instrument.stats.week52High'), value: formatValue(instrument.week52High, instrument.decimals, instrument.isYield) },
+    { label: t('instrument.stats.week52Low'), value: formatValue(instrument.week52Low, instrument.decimals, instrument.isYield) },
+    { label: t('instrument.stats.volume'), value: instrument.volume > 0 ? new Intl.NumberFormat('en-US', { notation: 'compact' }).format(instrument.volume) : 'N/A' },
+    { label: t('instrument.stats.avgVolume'), value: instrument.avgVolume > 0 ? new Intl.NumberFormat('en-US', { notation: 'compact' }).format(instrument.avgVolume) : 'N/A' }
   ]
 
   // Day's range calculation
@@ -764,7 +767,7 @@ function StatsRegion({
             marginBottom: '12px'
           }}
         >
-          KEY STATISTICS
+          {t('instrument.keyStats')}
         </div>
         <div
           style={{
@@ -811,7 +814,7 @@ function StatsRegion({
 
       {/* Card 2: Day's Range */}
       <RangeCard
-        title="TODAY'S RANGE"
+        title={t('instrument.todayRange')}
         low={instrument.low}
         high={instrument.high}
         current={instrument.value}
@@ -822,7 +825,7 @@ function StatsRegion({
 
       {/* Card 3: 52-Week Range */}
       <RangeCard
-        title="52-WEEK RANGE"
+        title={t('instrument.weekRange')}
         low={instrument.week52Low}
         high={instrument.week52High}
         current={instrument.value}
@@ -969,11 +972,12 @@ function EducationalContent({
   instrument: Instrument
   education: EducationData
 }) {
+  const { t, lang } = useT()
   const columns = [
-    { numeral: 'I', title: 'Definition', content: education.definition },
-    { numeral: 'II', title: 'How It\'s Calculated', content: education.calculation },
-    { numeral: 'III', title: 'What Moves It', content: education.drivers },
-    { numeral: 'IV', title: 'What It Tells You', content: education.interpretation }
+    { numeral: 'I', title: EDUCATION_SECTION_LABELS.definition[lang], content: education.definition },
+    { numeral: 'II', title: EDUCATION_SECTION_LABELS.calculation[lang], content: education.calculation },
+    { numeral: 'III', title: EDUCATION_SECTION_LABELS.drivers[lang], content: education.drivers },
+    { numeral: 'IV', title: EDUCATION_SECTION_LABELS.interpretation[lang], content: education.interpretation }
   ]
 
   return (
@@ -1013,7 +1017,9 @@ function EducationalContent({
           textAlign: 'center'
         }}
       >
-        Understanding {instrument.name}
+        {lang === 'jp'
+          ? `${instrument.name}${t('instrument.understanding')}`
+          : `${t('instrument.understanding')} ${instrument.name}`}
       </h2>
       <p
         style={{
@@ -1025,7 +1031,7 @@ function EducationalContent({
           marginBottom: '32px'
         }}
       >
-        Definition · Calculation · Drivers · Interpretation
+        {t('instrument.subtitle')}
       </p>
 
       {/* Four columns */}
@@ -1092,6 +1098,7 @@ function RelatedInstruments({
   instruments: Instrument[]
   colorMode: PriceColorMode
 }) {
+  const { t } = useT()
   if (instruments.length === 0) return null
 
 
@@ -1112,7 +1119,7 @@ function RelatedInstruments({
           marginBottom: '16px'
         }}
       >
-        Related Instruments
+        {t('instrument.related')}
       </h3>
 
       <div

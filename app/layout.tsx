@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Fraunces, Inter, IBM_Plex_Mono, Noto_Sans_JP, Noto_Serif_JP } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { LanguageProvider } from '@/lib/i18n'
 import './globals.css'
 
 const fraunces = Fraunces({
@@ -52,7 +53,9 @@ export default function RootLayout({
   return (
     <html className={`${fraunces.variable} ${inter.variable} ${ibmPlexMono.variable} ${notoSansJP.variable} ${notoSerifJP.variable} bg-bg-primary`}>
       <body className="font-sans antialiased">
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

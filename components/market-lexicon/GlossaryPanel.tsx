@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { GlossaryTerm, GlossarySortType } from '@/lib/market-lexicon-data'
 import { ChevronRight, ChevronLeft, Check } from 'lucide-react'
+import { useT } from '@/lib/i18n'
 
 interface GlossaryPanelProps {
   terms: GlossaryTerm[]
@@ -19,6 +20,7 @@ export function GlossaryPanel({
   collapsed,
   onToggleCollapse,
 }: GlossaryPanelProps) {
+  const { t } = useT()
   const [sort, setSort] = useState<GlossarySortType>('FREQUENCY')
   const [selectedId, setSelectedId] = useState<string | undefined>(activeTermId)
   const [search, setSearch] = useState('')
@@ -132,7 +134,7 @@ export function GlossaryPanel({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="label-caps">TERM GLOSSARY</span>
+          <span className="label-caps">{t('glossary.header')}</span>
           <span
             style={{
               fontFamily: 'var(--font-mono)',
@@ -177,7 +179,7 @@ export function GlossaryPanel({
       <div style={{ padding: '6px 12px', borderBottom: '1px solid #2A2A2A', flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', color: '#555555', letterSpacing: '0.08em' }}>
-            MASTERY PROGRESS
+            {t('glossary.progress.label')}
           </span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', color: '#00D964', letterSpacing: '0.08em' }}>
             {Math.round((masteredCount / terms.length) * 100)}%
@@ -211,7 +213,7 @@ export function GlossaryPanel({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="FILTER TERMS..."
+          placeholder={t('glossary.search.placeholder')}
           style={{
             width: '100%',
             background: '#1F1F1F',
@@ -248,7 +250,13 @@ export function GlossaryPanel({
                   transition: 'all 150ms',
                 }}
               >
-                {s === 'NOT MASTERED' ? 'UNMASTERED' : s === 'ALPHABETICAL' ? 'A–Z' : s}
+                {s === 'FREQUENCY'
+                  ? t('glossary.sort.frequency')
+                  : s === 'ALPHABETICAL'
+                  ? t('glossary.sort.alphabetical')
+                  : s === 'RECENT'
+                  ? t('glossary.sort.recent')
+                  : t('glossary.sort.unmastered')}
               </button>
             )
           )}
@@ -413,6 +421,7 @@ function TermDetailView({
   onClose: () => void
   onMasteredToggle: (mastered: boolean) => void
 }) {
+  const { t } = useT()
   return (
     <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
       {/* Detail header */}
@@ -452,10 +461,10 @@ function TermDetailView({
             ;(e.currentTarget as HTMLElement).style.color = '#888888'
           }}
         >
-          ← BACK
+          {t('glossary.detail.back')}
         </button>
         <span className="label-caps" style={{ fontSize: '0.6rem' }}>
-          TERM DETAIL
+          {t('glossary.detail.title')}
         </span>
       </div>
 
@@ -497,9 +506,9 @@ function TermDetailView({
           }}
         >
           {[
-            { label: 'SEEN', value: `${term.seenCount}×` },
-            { label: 'CATEGORY', value: term.category },
-            { label: 'LAST SEEN', value: term.lastSeen },
+            { label: t('glossary.detail.seen'), value: `${term.seenCount}×` },
+            { label: t('glossary.detail.category'), value: term.category },
+            { label: t('glossary.detail.lastSeen'), value: term.lastSeen },
           ].map(({ label, value }) => (
             <div
               key={label}
@@ -522,7 +531,7 @@ function TermDetailView({
         {/* Definition JP */}
         <div style={{ borderLeft: '2px solid #58A6FF', paddingLeft: '10px' }}>
           <div className="label-caps" style={{ fontSize: '0.55rem', marginBottom: '6px' }}>
-            DEFINITION
+            {t('glossary.detail.definition')}
           </div>
           <p
             className="font-jp"
@@ -535,7 +544,7 @@ function TermDetailView({
         {/* English definition */}
         <div style={{ borderLeft: '2px solid #2A2A2A', paddingLeft: '10px' }}>
           <div className="label-caps-muted" style={{ fontSize: '0.55rem', marginBottom: '6px' }}>
-            ENGLISH
+            {t('glossary.detail.english')}
           </div>
           <p
             style={{
@@ -554,7 +563,7 @@ function TermDetailView({
         {term.etymology && (
           <div>
             <div className="label-caps-muted" style={{ fontSize: '0.55rem', marginBottom: '6px' }}>
-              ETYMOLOGY
+              {t('glossary.detail.etymology')}
             </div>
             <p
               style={{
@@ -581,7 +590,7 @@ function TermDetailView({
             }}
           >
             <div className="label-caps" style={{ fontSize: '0.55rem', marginBottom: '6px' }}>
-              REAL-WORLD USAGE
+              {t('glossary.detail.usage')}
             </div>
             <p
               style={{
@@ -643,10 +652,10 @@ function TermDetailView({
           {term.mastered ? (
             <>
               <Check size={12} />
-              MASTERED — CLICK TO UNMARK
+              {t('glossary.detail.unmark')}
             </>
           ) : (
-            'MARK AS MASTERED'
+            t('glossary.detail.markMastered')
           )}
         </button>
       </div>

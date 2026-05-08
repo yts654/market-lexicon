@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { TerminalHeader } from '@/components/market-lexicon/TerminalHeader'
 import { StatusBar } from '@/components/market-lexicon/StatusBar'
 import { ArchiveSidebar } from '@/components/market-lexicon/ArchiveSidebar'
 import { TranscriptWorkspace } from '@/components/market-lexicon/TranscriptWorkspace'
@@ -18,44 +17,28 @@ import {
   Session,
 } from '@/lib/market-lexicon-data'
 import { MOCK_INSTRUMENTS, PriceColorMode, PRICE_COLOR_MODE_KEY } from '@/lib/market-data'
+import { useT, Language } from '@/lib/i18n'
 
-type WorkspaceMode = 'TRANSCRIPT' | 'CHAT' | 'MARKETS'
-type SidebarTab = 'GLOSSARY' | 'MARKETS' | 'NOTES' | 'SETTINGS'
-
-const TAB_LABELS: Record<SidebarTab, string> = {
-  MARKETS: 'Markets',
-  GLOSSARY: 'Glossary',
-  NOTES: 'Notes',
-  SETTINGS: 'Settings',
-}
-
-const SECTION_META: Record<WorkspaceMode, { numeral: string; subtitle: string; title: string }> = {
-  MARKETS: { numeral: 'I', subtitle: 'GLOBAL MARKETS', title: 'Asia · United States · Europe' },
-  TRANSCRIPT: { numeral: 'II', subtitle: 'TRANSCRIPTS', title: 'Financial English Learning' },
-  CHAT: { numeral: 'III', subtitle: 'CHAT', title: 'Interactive Analysis' },
-}
-
-const KEYBOARD_SHORTCUTS = [
-  { keys: '⌘ K', desc: 'コマンドパレット' },
-  { keys: '⌘ N', desc: '新規セッション' },
-  { keys: '⌘ 1', desc: 'トランスクリプト' },
-  { keys: '⌘ 2', desc: 'チャット' },
-  { keys: '⌘ 3', desc: 'マーケット' },
-  { keys: '⌘ B', desc: '左サイドバー切替' },
-  { keys: '⌘ G', desc: '右パネル切替' },
-] as const
+// ─── Top-level groups ───
+type AppGroup = 'MARKETS' | 'LEARNING' | 'SETTINGS'
+// ─── Learning sub-mode (transcript / chat) ───
+type LearningSub = 'TRANSCRIPT' | 'CHAT'
+// ─── Right panel tab in learning mode ───
+type LearningRightTab = 'GLOSSARY' | 'NOTES'
 
 export default function Page() {
-  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('MARKETS')
-  const [sidebarTab, setSidebarTab] = useState<SidebarTab>('MARKETS')
+  const { t, lang, toggleLang, setLang } = useT()
+  const [group, setGroup] = useState<AppGroup>('MARKETS')
+  const [learningSub, setLearningSub] = useState<LearningSub>('TRANSCRIPT')
+  const [learningRightTab, setLearningRightTab] =
+    useState<LearningRightTab>('GLOSSARY')
   const [sessions, setSessions] = useState<Session[]>(MOCK_SESSIONS)
   const [glossary, setGlossary] = useState<GlossaryTerm[]>(MOCK_GLOSSARY)
   const [activeSessionId, setActiveSessionId] = useState<string>('#0247')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [archiveCollapsed, setArchiveCollapsed] = useState(false)
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false)
   const [commandOpen, setCommandOpen] = useState(false)
   const [highlightedTermId, setHighlightedTermId] = useState<string | undefined>()
-  const [dailyTerm] = useState(MOCK_GLOSSARY[Math.floor(Math.random() * MOCK_GLOSSARY.length)])
   const [priceColorMode, setPriceColorMode] = useState<PriceColorMode>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem(PRICE_COLOR_MODE_KEY) as PriceColorMode) || 'jp'
@@ -63,18 +46,12 @@ export default function Page() {
     return 'jp'
   })
 
-  // Persist color mode
   useEffect(() => {
     localStorage.setItem(PRICE_COLOR_MODE_KEY, priceColorMode)
   }, [priceColorMode])
 
-  const toggleColorMode = () => {
-    setPriceColorMode(prev => prev === 'jp' ? 'en' : 'jp')
-  }
-
-  const setColorMode = (mode: PriceColorMode) => {
-    setPriceColorMode(mode)
-  }
+  const toggleColorMode = () =>
+    setPriceColorMode((prev) => (prev === 'jp' ? 'en' : 'jp'))
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -88,16 +65,16 @@ export default function Page() {
         handleNewSession()
       } else if (mod && e.key === '1') {
         e.preventDefault()
-        setWorkspaceMode('TRANSCRIPT')
+        setGroup('MARKETS')
       } else if (mod && e.key === '2') {
         e.preventDefault()
-        setWorkspaceMode('CHAT')
+        setGroup('LEARNING')
       } else if (mod && e.key === '3') {
         e.preventDefault()
-        setWorkspaceMode('MARKETS')
+        setGroup('SETTINGS')
       } else if (mod && e.key === 'b') {
         e.preventDefault()
-        setSidebarCollapsed((v) => !v)
+        setArchiveCollapsed((v) => !v)
       } else if (mod && e.key === 'g') {
         e.preventDefault()
         setRightPanelCollapsed((v) => !v)
@@ -123,17 +100,18 @@ export default function Page() {
     }
     setSessions((prev) => [newSession, ...prev])
     setActiveSessionId(newId)
+    setGroup('LEARNING')
   }
 
   const handleTermClick = useCallback(
     (termEnglish: string) => {
       const found = glossary.find(
-        (t) => t.english.toLowerCase() === termEnglish.toLowerCase()
+        (term) => term.english.toLowerCase() === termEnglish.toLowerCase()
       )
       if (found) {
         setHighlightedTermId(found.id)
         setRightPanelCollapsed(false)
-        setSidebarTab('GLOSSARY')
+        setLearningRightTab('GLOSSARY')
       }
     },
     [glossary]
@@ -141,30 +119,9 @@ export default function Page() {
 
   const handleTermUpdate = (id: string, mastered: boolean) => {
     setGlossary((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, mastered } : t))
+      prev.map((term) => (term.id === id ? { ...term, mastered } : term))
     )
   }
-
-  const handleFunctionKey = (key: string) => {
-    switch (key) {
-      case 'MKT':
-        setWorkspaceMode('MARKETS')
-        break
-      case 'TXN':
-        setWorkspaceMode('TRANSCRIPT')
-        break
-      case 'DEF':
-        setSidebarTab('GLOSSARY')
-        setRightPanelCollapsed(false)
-        break
-      case 'SET':
-        setSidebarTab('SETTINGS')
-        setRightPanelCollapsed(false)
-        break
-    }
-  }
-
-  const totalTermsLearned = glossary.filter((t) => t.mastered).length
 
   return (
     <>
@@ -178,13 +135,9 @@ export default function Page() {
           background: 'var(--bg-primary)',
         }}
       >
-        {/* Editorial Header */}
         <EditorialHeader />
-
-        {/* Top Ticker Tape */}
         <TopTickerTape instruments={MOCK_INSTRUMENTS} colorMode={priceColorMode} />
 
-        {/* Main layout: function rail + sidebar + center + right panel */}
         <div
           style={{
             flex: 1,
@@ -193,27 +146,22 @@ export default function Page() {
             minHeight: 0,
           }}
         >
-          {/* Function Key Left Rail - Editorial Style */}
-          <FunctionKeyRail
-            activeKey={
-              sidebarTab === 'SETTINGS' && !rightPanelCollapsed ? 'SET' :
-              sidebarTab === 'GLOSSARY' && !rightPanelCollapsed ? 'DEF' :
-              workspaceMode === 'MARKETS' ? 'MKT' : 'TXN'
-            }
-            onSelect={handleFunctionKey}
-          />
+          {/* Left function rail (3 groups) */}
+          <FunctionKeyRail group={group} onSelect={setGroup} />
 
-          {/* Left sidebar */}
-          <ArchiveSidebar
-            sessions={sessions}
-            activeSessionId={activeSessionId}
-            onSelectSession={setActiveSessionId}
-            onNewSession={handleNewSession}
-            collapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
-          />
+          {/* Archive sidebar — only visible in LEARNING group */}
+          {group === 'LEARNING' && (
+            <ArchiveSidebar
+              sessions={sessions}
+              activeSessionId={activeSessionId}
+              onSelectSession={setActiveSessionId}
+              onNewSession={handleNewSession}
+              collapsed={archiveCollapsed}
+              onToggleCollapse={() => setArchiveCollapsed((v) => !v)}
+            />
+          )}
 
-          {/* Center panel */}
+          {/* Center workspace */}
           <main
             style={{
               flex: 1,
@@ -224,54 +172,92 @@ export default function Page() {
               background: 'var(--bg-primary)',
             }}
           >
-            {/* Section Marker */}
-            <SectionMarker {...SECTION_META[workspaceMode]} />
+            <SectionMarker group={group} />
 
-            {/* Mode switcher tabs */}
-            <ModeSwitcher mode={workspaceMode} onSwitch={setWorkspaceMode} />
+            {group === 'LEARNING' && (
+              <LearningSubSwitcher
+                sub={learningSub}
+                onSwitch={setLearningSub}
+              />
+            )}
 
-            {/* Workspace */}
-            <div style={{ flex: 1, overflow: 'auto', minHeight: 0, display: 'flex' }}>
-              {workspaceMode === 'TRANSCRIPT' ? (
-                <TranscriptWorkspace onTermClick={handleTermClick} />
-              ) : workspaceMode === 'CHAT' ? (
-                <ChatWorkspace onTermClick={handleTermClick} />
-              ) : (
+            <div
+              style={{
+                flex: 1,
+                overflow: 'auto',
+                minHeight: 0,
+                display: 'flex',
+              }}
+            >
+              {group === 'MARKETS' && (
                 <MarketsWorkspace
                   instruments={MOCK_INSTRUMENTS}
                   colorMode={priceColorMode}
                   onToggleColorMode={toggleColorMode}
                 />
               )}
+              {group === 'LEARNING' && learningSub === 'TRANSCRIPT' && (
+                <TranscriptWorkspace onTermClick={handleTermClick} />
+              )}
+              {group === 'LEARNING' && learningSub === 'CHAT' && (
+                <ChatWorkspace onTermClick={handleTermClick} />
+              )}
+              {group === 'SETTINGS' && (
+                <SettingsCenterPanel
+                  colorMode={priceColorMode}
+                  onSetColorMode={setPriceColorMode}
+                  lang={lang}
+                  onSetLang={setLang}
+                />
+              )}
             </div>
           </main>
 
-          {/* Right panel with tabs */}
-          <RightPanel
-            tab={sidebarTab}
-            onTabChange={setSidebarTab}
-            collapsed={rightPanelCollapsed}
-            onToggleCollapse={() => setRightPanelCollapsed((v) => !v)}
-            glossary={glossary}
-            onTermUpdate={handleTermUpdate}
-            activeTermId={highlightedTermId}
-            instruments={MOCK_INSTRUMENTS}
-            colorMode={priceColorMode}
-            onToggleColorMode={toggleColorMode}
-            onSetColorMode={setColorMode}
-          />
+          {/* Right panel — depends on group */}
+          {group === 'MARKETS' && !rightPanelCollapsed && (
+            <RightPanelWrapper
+              title={t('tab.markets')}
+              onCollapse={() => setRightPanelCollapsed(true)}
+            >
+              <RightSidebarMarkets
+                instruments={MOCK_INSTRUMENTS}
+                colorMode={priceColorMode}
+                onToggleColorMode={toggleColorMode}
+              />
+            </RightPanelWrapper>
+          )}
+          {group === 'LEARNING' && !rightPanelCollapsed && (
+            <LearningRightPanel
+              tab={learningRightTab}
+              onTabChange={setLearningRightTab}
+              onCollapse={() => setRightPanelCollapsed(true)}
+              glossary={glossary}
+              onTermUpdate={handleTermUpdate}
+              activeTermId={highlightedTermId}
+            />
+          )}
+          {(group === 'MARKETS' || group === 'LEARNING') && rightPanelCollapsed && (
+            <CollapsedTab
+              label={
+                group === 'MARKETS'
+                  ? t('tab.markets')
+                  : learningRightTab === 'GLOSSARY'
+                  ? t('tab.glossary')
+                  : t('tab.notes')
+              }
+              onExpand={() => setRightPanelCollapsed(false)}
+            />
+          )}
         </div>
 
-        {/* Bottom status bar */}
         <StatusBar
           sessionId={activeSessionId}
-          mode={workspaceMode}
+          group={group}
           termCount={glossary.length}
           isOnline
         />
       </div>
 
-      {/* Command Palette */}
       <CommandPalette
         open={commandOpen}
         onClose={() => setCommandOpen(false)}
@@ -279,12 +265,14 @@ export default function Page() {
         terms={glossary}
         onSelectSession={(id) => {
           setActiveSessionId(id)
+          setGroup('LEARNING')
           setCommandOpen(false)
         }}
         onSelectTerm={(id) => {
           setHighlightedTermId(id)
           setRightPanelCollapsed(false)
-          setSidebarTab('GLOSSARY')
+          setGroup('LEARNING')
+          setLearningRightTab('GLOSSARY')
           setCommandOpen(false)
         }}
         onNewSession={() => {
@@ -292,7 +280,13 @@ export default function Page() {
           setCommandOpen(false)
         }}
         onSwitchMode={(m) => {
-          setWorkspaceMode(m as WorkspaceMode)
+          if (m === 'TRANSCRIPT') {
+            setGroup('LEARNING')
+            setLearningSub('TRANSCRIPT')
+          } else if (m === 'CHAT') {
+            setGroup('LEARNING')
+            setLearningSub('CHAT')
+          }
           setCommandOpen(false)
         }}
       />
@@ -301,23 +295,35 @@ export default function Page() {
 }
 
 // ─────────────────────────────────────────────
-// Editorial Header - Top of page
+// Editorial Header
 // ─────────────────────────────────────────────
 function EditorialHeader() {
+  const { t, lang, toggleLang } = useT()
   const [dateTimeStr, setDateTimeStr] = useState<string | null>(null)
 
   useEffect(() => {
     const updateTime = () => {
       const now = new Date()
-      const daysJa = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日']
-      const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日（${daysJa[now.getDay()]}）`
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} JST`
-      setDateTimeStr(`${dateStr} · 東京 · ${timeStr}`)
+      if (lang === 'jp') {
+        const daysJa = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日']
+        const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日（${daysJa[now.getDay()]}）`
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} JST`
+        setDateTimeStr(`${dateStr} · 東京 · ${timeStr}`)
+      } else {
+        const daysEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+        const monthsEn = [
+          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+        ]
+        const dateStr = `${daysEn[now.getDay()]}, ${monthsEn[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} JST`
+        setDateTimeStr(`${dateStr} · Tokyo · ${timeStr}`)
+      }
     }
     updateTime()
     const interval = setInterval(updateTime, 60000)
     return () => clearInterval(interval)
-  }, [])
+  }, [lang])
 
   return (
     <header
@@ -329,17 +335,16 @@ function EditorialHeader() {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 20px',
-        flexShrink: 0
+        flexShrink: 0,
       }}
     >
-      {/* Left: Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <div
           style={{
             width: '4px',
             height: '4px',
             borderRadius: '50%',
-            background: 'var(--accent-gold)'
+            background: 'var(--accent-gold)',
           }}
         />
         <span
@@ -348,73 +353,136 @@ function EditorialHeader() {
             fontStyle: 'italic',
             fontSize: '14px',
             color: 'var(--text-secondary)',
-            letterSpacing: '-0.01em'
+            letterSpacing: '-0.01em',
           }}
         >
           Market Lexicon
         </span>
       </div>
 
-      {/* Center: Date/Time */}
       <span
         style={{
           fontFamily: 'var(--font-serif)',
           fontStyle: 'italic',
           fontSize: '11px',
           color: 'var(--text-tertiary)',
-          letterSpacing: '0'
+          letterSpacing: '0',
         }}
       >
-        {dateTimeStr ?? '\u00A0'}
+        {dateTimeStr ?? ' '}
       </span>
 
-      {/* Right: Sign In */}
-      <button
-        style={{
-          fontFamily: 'var(--font-sans)',
-          fontSize: '11px',
-          fontWeight: 500,
-          color: 'var(--text-secondary)',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          padding: 0
-        }}
-      >
-        ログイン
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Language toggle */}
+        <button
+          onClick={toggleLang}
+          aria-label="Toggle language"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            fontWeight: 600,
+            letterSpacing: '0.10em',
+            background: 'transparent',
+            border: '1px solid var(--border-subtle)',
+            padding: '3px 8px',
+            cursor: 'pointer',
+            color: 'var(--text-secondary)',
+            transition: 'all 150ms',
+          }}
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLElement).style.borderColor =
+              'var(--accent-gold)'
+            ;(e.currentTarget as HTMLElement).style.color = 'var(--accent-gold)'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLElement).style.borderColor =
+              'var(--border-subtle)'
+            ;(e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'
+          }}
+        >
+          <span
+            style={{
+              color: lang === 'jp' ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+            }}
+          >
+            JP
+          </span>
+          <span style={{ opacity: 0.4 }}>/</span>
+          <span
+            style={{
+              color: lang === 'en' ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+            }}
+          >
+            EN
+          </span>
+        </button>
+        <button
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: '11px',
+            fontWeight: 500,
+            color: 'var(--text-secondary)',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+          }}
+        >
+          {t('header.signIn')}
+        </button>
+      </div>
     </header>
   )
 }
 
 // ─────────────────────────────────────────────
-// Section Marker - Editorial chapter heading
+// Section Marker
 // ─────────────────────────────────────────────
-function SectionMarker({ numeral, subtitle, title }: { numeral: string; subtitle: string; title: string }) {
+function SectionMarker({ group }: { group: AppGroup }) {
+  const { t } = useT()
+  const meta: Record<AppGroup, { numeral: string; subtitleKey: string; titleKey: string }> = {
+    MARKETS: {
+      numeral: 'I',
+      subtitleKey: 'section.markets.subtitle',
+      titleKey: 'section.markets.title',
+    },
+    LEARNING: {
+      numeral: 'II',
+      subtitleKey: 'section.learning.subtitle',
+      titleKey: 'section.learning.title',
+    },
+    SETTINGS: {
+      numeral: 'III',
+      subtitleKey: 'section.settings.subtitle',
+      titleKey: 'section.settings.title',
+    },
+  }
+  const m = meta[group]
   return (
     <div
       style={{
         padding: '16px 20px 12px',
         background: 'var(--bg-primary)',
         borderBottom: '1px solid var(--border-subtle)',
-        flexShrink: 0
+        flexShrink: 0,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-        {/* Roman numeral */}
         <span
           style={{
             fontFamily: 'var(--font-serif)',
             fontSize: '14px',
             fontWeight: 400,
             color: 'var(--accent-gold-dim)',
-            marginTop: '2px'
+            marginTop: '2px',
           }}
         >
-          {numeral}
+          {m.numeral}
         </span>
         <div>
-          {/* Subtitle */}
           <div
             style={{
               fontFamily: 'var(--font-sans)',
@@ -423,12 +491,11 @@ function SectionMarker({ numeral, subtitle, title }: { numeral: string; subtitle
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
               color: 'var(--text-tertiary)',
-              marginBottom: '4px'
+              marginBottom: '4px',
             }}
           >
-            {subtitle}
+            {t(m.subtitleKey as any)}
           </div>
-          {/* Title */}
           <h1
             style={{
               fontFamily: 'var(--font-serif)',
@@ -437,10 +504,10 @@ function SectionMarker({ numeral, subtitle, title }: { numeral: string; subtitle
               fontStyle: 'italic',
               color: 'var(--text-primary)',
               letterSpacing: '-0.01em',
-              margin: 0
+              margin: 0,
             }}
           >
-            {title}
+            {t(m.titleKey as any)}
           </h1>
         </div>
       </div>
@@ -449,14 +516,20 @@ function SectionMarker({ numeral, subtitle, title }: { numeral: string; subtitle
 }
 
 // ─────────────────────────────────────────────
-// Function Key Left Rail - Editorial Style
+// Function Key Left Rail
 // ─────────────────────────────────────────────
-function FunctionKeyRail({ activeKey, onSelect }: { activeKey: string; onSelect: (key: string) => void }) {
-  const keys = [
-    { key: 'MKT', label: 'マーケット', numeral: 'I' },
-    { key: 'TXN', label: 'トランスクリプト', numeral: 'II' },
-    { key: 'DEF', label: '用語集', numeral: 'III' },
-    { key: 'SET', label: '設定', numeral: 'IV' }
+function FunctionKeyRail({
+  group,
+  onSelect,
+}: {
+  group: AppGroup
+  onSelect: (g: AppGroup) => void
+}) {
+  const { t } = useT()
+  const keys: { key: AppGroup; labelKey: string; numeral: string }[] = [
+    { key: 'MARKETS', labelKey: 'rail.markets', numeral: 'I' },
+    { key: 'LEARNING', labelKey: 'rail.learning', numeral: 'II' },
+    { key: 'SETTINGS', labelKey: 'rail.settings', numeral: 'III' },
   ]
 
   return (
@@ -468,11 +541,11 @@ function FunctionKeyRail({ activeKey, onSelect }: { activeKey: string; onSelect:
         display: 'flex',
         flexDirection: 'column',
         paddingTop: '16px',
-        flexShrink: 0
+        flexShrink: 0,
       }}
     >
-      {keys.map(({ key, label, numeral }) => {
-        const isActive = activeKey === key
+      {keys.map(({ key, labelKey, numeral }) => {
+        const isActive = group === key
         return (
           <button
             key={key}
@@ -481,7 +554,9 @@ function FunctionKeyRail({ activeKey, onSelect }: { activeKey: string; onSelect:
               height: '64px',
               background: 'transparent',
               border: 'none',
-              borderLeft: isActive ? '2px solid var(--accent-gold)' : '2px solid transparent',
+              borderLeft: isActive
+                ? '2px solid var(--accent-gold)'
+                : '2px solid transparent',
               borderBottom: '1px solid var(--border-subtle)',
               cursor: 'pointer',
               display: 'flex',
@@ -489,7 +564,7 @@ function FunctionKeyRail({ activeKey, onSelect }: { activeKey: string; onSelect:
               alignItems: 'center',
               justifyContent: 'center',
               gap: '4px',
-              padding: '8px'
+              padding: '8px',
             }}
           >
             <span
@@ -498,7 +573,7 @@ function FunctionKeyRail({ activeKey, onSelect }: { activeKey: string; onSelect:
                 fontSize: '11px',
                 fontWeight: 400,
                 color: isActive ? 'var(--text-primary)' : 'var(--accent-gold-dim)',
-                fontStyle: 'normal'
+                fontStyle: 'normal',
               }}
             >
               {numeral}
@@ -510,10 +585,11 @@ function FunctionKeyRail({ activeKey, onSelect }: { activeKey: string; onSelect:
                 fontWeight: 500,
                 color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)',
                 letterSpacing: '0.12em',
-                textTransform: 'uppercase'
+                textTransform: 'uppercase',
+                textAlign: 'center',
               }}
             >
-              {label}
+              {t(labelKey as any)}
             </span>
           </button>
         )
@@ -521,11 +597,10 @@ function FunctionKeyRail({ activeKey, onSelect }: { activeKey: string; onSelect:
 
       <div style={{ flex: 1 }} />
 
-      {/* Help link */}
       <div
         style={{
           padding: '16px 8px',
-          textAlign: 'center'
+          textAlign: 'center',
         }}
       >
         <button
@@ -537,10 +612,10 @@ function FunctionKeyRail({ activeKey, onSelect }: { activeKey: string; onSelect:
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
-            padding: 0
+            padding: 0,
           }}
         >
-          ヘルプ
+          {t('rail.help')}
         </button>
       </div>
     </div>
@@ -548,411 +623,20 @@ function FunctionKeyRail({ activeKey, onSelect }: { activeKey: string; onSelect:
 }
 
 // ─────────────────────────────────────────────
-// Right Panel with Tabs - Editorial Style
+// Learning Sub-Switcher (transcript / chat)
 // ─────────────────────────────────────────────
-function RightPanel({
-  tab,
-  onTabChange,
-  collapsed,
-  onToggleCollapse,
-  glossary,
-  onTermUpdate,
-  activeTermId,
-  instruments,
-  colorMode,
-  onToggleColorMode,
-  onSetColorMode
+function LearningSubSwitcher({
+  sub,
+  onSwitch,
 }: {
-  tab: SidebarTab
-  onTabChange: (tab: SidebarTab) => void
-  collapsed: boolean
-  onToggleCollapse: () => void
-  glossary: GlossaryTerm[]
-  onTermUpdate: (id: string, mastered: boolean) => void
-  activeTermId?: string
-  instruments: typeof MOCK_INSTRUMENTS
-  colorMode: PriceColorMode
-  onToggleColorMode: () => void
-  onSetColorMode: (mode: PriceColorMode) => void
+  sub: LearningSub
+  onSwitch: (s: LearningSub) => void
 }) {
-  if (collapsed) {
-    return (
-      <button
-        onClick={onToggleCollapse}
-        style={{
-          width: '36px',
-          background: 'var(--bg-secondary)',
-          borderLeft: '1px solid var(--border-subtle)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          border: 'none',
-          flexShrink: 0
-        }}
-      >
-        <span
-          style={{
-            writingMode: 'vertical-rl',
-            fontFamily: 'var(--font-serif)',
-            fontStyle: 'italic',
-            fontSize: '11px',
-            color: 'var(--text-secondary)',
-            letterSpacing: '0.02em'
-          }}
-        >
-          {TAB_LABELS[tab]}
-        </span>
-      </button>
-    )
-  }
-
-  return (
-    <div
-      style={{
-        width: '320px',
-        background: 'var(--bg-secondary)',
-        borderLeft: '1px solid var(--border-subtle)',
-        display: 'flex',
-        flexDirection: 'column',
-        flexShrink: 0,
-        overflow: 'hidden'
-      }}
-    >
-      {/* Tab strip */}
-      <div
-        role="tablist"
-        style={{
-          height: '44px',
-          display: 'flex',
-          alignItems: 'stretch',
-          background: 'var(--bg-secondary)',
-          borderBottom: '1px solid var(--border-medium)',
-          flexShrink: 0
-        }}
-      >
-        {(['MARKETS', 'GLOSSARY', 'NOTES', 'SETTINGS'] as SidebarTab[]).map((t) => {
-          const active = tab === t
-          const label = TAB_LABELS[t]
-          return (
-            <button
-              key={t}
-              role="tab"
-              aria-selected={active}
-              onClick={() => onTabChange(t)}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                fontFamily: 'var(--font-sans)',
-                fontSize: '11px',
-                fontWeight: 500,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: active ? '1px solid var(--accent-gold)' : '1px solid transparent',
-                cursor: 'pointer',
-                transition: 'all 150ms'
-              }}
-            >
-              {label}
-            </button>
-          )
-        })}
-        <button
-          onClick={onToggleCollapse}
-          style={{
-            padding: '0 12px',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--text-tertiary)',
-            fontFamily: 'var(--font-serif)',
-            fontSize: '14px'
-          }}
-          aria-label="Collapse panel"
-        >
-          ›
-        </button>
-      </div>
-
-      {/* Tab content */}
-      <div role="tabpanel" style={{ flex: 1, overflow: 'auto' }}>
-        {tab === 'GLOSSARY' && (
-          <GlossaryPanel
-            terms={glossary}
-            onTermUpdate={onTermUpdate}
-            activeTermId={activeTermId}
-            collapsed={false}
-            onToggleCollapse={onToggleCollapse}
-          />
-        )}
-        {tab === 'MARKETS' && (
-          <RightSidebarMarkets
-            instruments={instruments}
-            colorMode={colorMode}
-            onToggleColorMode={onToggleColorMode}
-          />
-        )}
-        {tab === 'NOTES' && (
-          <div
-            style={{
-              padding: '24px 20px',
-              fontFamily: 'var(--font-serif)',
-              fontStyle: 'italic',
-              fontSize: '13px',
-              color: 'var(--text-tertiary)'
-            }}
-          >
-            Notes feature coming soon.
-          </div>
-        )}
-        {tab === 'SETTINGS' && (
-          <SettingsPanel
-            colorMode={colorMode}
-            onSetColorMode={onSetColorMode}
-          />
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────
-// Settings Panel
-// ─────────────────────────────────────────────
-function SettingsPanel({
-  colorMode,
-  onSetColorMode,
-}: {
-  colorMode: PriceColorMode
-  onSetColorMode: (mode: PriceColorMode) => void
-}) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        overflowY: 'auto',
-        background: 'var(--bg-panel)',
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: '12px 16px',
-          borderBottom: '1px solid var(--border-medium)',
-        }}
-      >
-        <span
-          style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'var(--text-secondary)',
-          }}
-        >
-          SETTINGS
-        </span>
-      </div>
-
-      {/* Price Color Mode */}
-      <div
-        style={{
-          padding: '16px',
-          borderBottom: '1px solid var(--border-subtle)',
-        }}
-      >
-        <div
-          style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'var(--text-tertiary)',
-            marginBottom: '8px',
-          }}
-        >
-          価格カラーモード
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {(['jp', 'en'] as PriceColorMode[]).map((mode) => {
-            const active = colorMode === mode
-            return (
-              <button
-                key={mode}
-                onClick={() => onSetColorMode(mode)}
-                style={{
-                  flex: 1,
-                  padding: '10px 12px',
-                  background: active ? 'var(--bg-tertiary)' : 'transparent',
-                  border: '1px solid',
-                  borderColor: active ? 'var(--accent-gold)' : 'var(--border-subtle)',
-                  cursor: 'pointer',
-                  transition: 'all 150ms',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      color: mode === 'jp' ? 'var(--price-up)' : 'var(--price-up-western)',
-                    }}
-                  >
-                    ▲
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      color: mode === 'jp' ? 'var(--price-down)' : 'var(--price-down-western)',
-                    }}
-                  >
-                    ▼
-                  </span>
-                </div>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: '10px',
-                    fontWeight: 500,
-                    color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                    letterSpacing: '0.06em',
-                  }}
-                >
-                  {mode === 'jp' ? '日本式' : '欧米式'}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-        <p
-          style={{
-            margin: '8px 0 0',
-            fontFamily: 'var(--font-serif)',
-            fontStyle: 'italic',
-            fontSize: '11px',
-            color: 'var(--text-tertiary)',
-            lineHeight: 1.6,
-          }}
-        >
-          {colorMode === 'jp'
-            ? '日本式: 上昇=赤、下落=緑'
-            : '欧米式: 上昇=緑、下落=赤'}
-        </p>
-      </div>
-
-      {/* Keyboard Shortcuts */}
-      <div
-        style={{
-          padding: '16px',
-          borderBottom: '1px solid var(--border-subtle)',
-        }}
-      >
-        <div
-          style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'var(--text-tertiary)',
-            marginBottom: '12px',
-          }}
-        >
-          キーボードショートカット
-        </div>
-        {KEYBOARD_SHORTCUTS.map(({ keys, desc }) => (
-          <div
-            key={keys}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '6px 0',
-              borderBottom: '1px solid var(--border-subtle)',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: 'var(--font-sans)',
-                fontSize: '11px',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              {desc}
-            </span>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '10px',
-                color: 'var(--text-tertiary)',
-                background: 'var(--bg-tertiary)',
-                border: '1px solid var(--border-subtle)',
-                padding: '2px 6px',
-              }}
-            >
-              {keys}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* About */}
-      <div style={{ padding: '16px' }}>
-        <div
-          style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'var(--text-tertiary)',
-            marginBottom: '8px',
-          }}
-        >
-          ABOUT
-        </div>
-        <p
-          style={{
-            margin: 0,
-            fontFamily: 'var(--font-serif)',
-            fontStyle: 'italic',
-            fontSize: '12px',
-            color: 'var(--text-tertiary)',
-            lineHeight: 1.7,
-          }}
-        >
-          Market Lexicon — 金融英語学習ツール
-        </p>
-      </div>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────
-// Mode Switcher - Editorial Style Tabs
-// ─────────────────────────────────────────────
-function ModeSwitcher({ mode, onSwitch }: { mode: WorkspaceMode; onSwitch: (m: WorkspaceMode) => void }) {
-  const tabs: { key: WorkspaceMode; label: string }[] = [
-    { key: 'MARKETS', label: 'Markets' },
-    { key: 'TRANSCRIPT', label: 'Transcripts' },
-    { key: 'CHAT', label: 'Chat' }
+  const { t } = useT()
+  const tabs: { key: LearningSub; labelKey: string }[] = [
+    { key: 'TRANSCRIPT', labelKey: 'mode.transcript' },
+    { key: 'CHAT', labelKey: 'mode.chat' },
   ]
-
   return (
     <div
       role="tablist"
@@ -963,11 +647,11 @@ function ModeSwitcher({ mode, onSwitch }: { mode: WorkspaceMode; onSwitch: (m: W
         background: 'var(--bg-secondary)',
         borderBottom: '1px solid var(--border-medium)',
         padding: '0 20px',
-        flexShrink: 0
+        flexShrink: 0,
       }}
     >
-      {tabs.map(({ key, label }) => {
-        const active = mode === key
+      {tabs.map(({ key, labelKey }) => {
+        const active = sub === key
         return (
           <button
             key={key}
@@ -984,16 +668,489 @@ function ModeSwitcher({ mode, onSwitch }: { mode: WorkspaceMode; onSwitch: (m: W
               color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
               background: 'transparent',
               border: 'none',
-              borderBottom: active ? '1px solid var(--accent-gold)' : '1px solid transparent',
+              borderBottom: active
+                ? '1px solid var(--accent-gold)'
+                : '1px solid transparent',
               cursor: 'pointer',
               transition: 'all 150ms',
-              marginBottom: '-1px'
+              marginBottom: '-1px',
             }}
           >
-            {label}
+            {t(labelKey as any)}
           </button>
         )
       })}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Right Panel Wrapper (used for Markets group)
+// ─────────────────────────────────────────────
+function RightPanelWrapper({
+  title,
+  onCollapse,
+  children,
+}: {
+  title: string
+  onCollapse: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <div
+      style={{
+        width: '320px',
+        background: 'var(--bg-secondary)',
+        borderLeft: '1px solid var(--border-subtle)',
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        style={{
+          height: '44px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          background: 'var(--bg-secondary)',
+          borderBottom: '1px solid var(--border-medium)',
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--text-primary)',
+          }}
+        >
+          {title}
+        </span>
+        <button
+          onClick={onCollapse}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--text-tertiary)',
+            fontFamily: 'var(--font-serif)',
+            fontSize: '14px',
+          }}
+        >
+          ›
+        </button>
+      </div>
+      <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Learning Right Panel (Glossary / Notes)
+// ─────────────────────────────────────────────
+function LearningRightPanel({
+  tab,
+  onTabChange,
+  onCollapse,
+  glossary,
+  onTermUpdate,
+  activeTermId,
+}: {
+  tab: LearningRightTab
+  onTabChange: (tab: LearningRightTab) => void
+  onCollapse: () => void
+  glossary: GlossaryTerm[]
+  onTermUpdate: (id: string, mastered: boolean) => void
+  activeTermId?: string
+}) {
+  const { t } = useT()
+  return (
+    <div
+      style={{
+        width: '320px',
+        background: 'var(--bg-secondary)',
+        borderLeft: '1px solid var(--border-subtle)',
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        role="tablist"
+        style={{
+          height: '44px',
+          display: 'flex',
+          alignItems: 'stretch',
+          background: 'var(--bg-secondary)',
+          borderBottom: '1px solid var(--border-medium)',
+          flexShrink: 0,
+        }}
+      >
+        {(['GLOSSARY', 'NOTES'] as LearningRightTab[]).map((key) => {
+          const active = tab === key
+          const labelKey = key === 'GLOSSARY' ? 'tab.glossary' : 'tab.notes'
+          return (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={active}
+              onClick={() => onTabChange(key)}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                fontFamily: 'var(--font-sans)',
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: active
+                  ? '1px solid var(--accent-gold)'
+                  : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 150ms',
+              }}
+            >
+              {t(labelKey as any)}
+            </button>
+          )
+        })}
+        <button
+          onClick={onCollapse}
+          style={{
+            padding: '0 12px',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--text-tertiary)',
+            fontFamily: 'var(--font-serif)',
+            fontSize: '14px',
+          }}
+          aria-label="Collapse panel"
+        >
+          ›
+        </button>
+      </div>
+
+      <div role="tabpanel" style={{ flex: 1, overflow: 'auto' }}>
+        {tab === 'GLOSSARY' && (
+          <GlossaryPanel
+            terms={glossary}
+            onTermUpdate={onTermUpdate}
+            activeTermId={activeTermId}
+            collapsed={false}
+            onToggleCollapse={onCollapse}
+          />
+        )}
+        {tab === 'NOTES' && (
+          <div
+            style={{
+              padding: '24px 20px',
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
+              fontSize: '13px',
+              color: 'var(--text-tertiary)',
+            }}
+          >
+            {t('panel.notes.placeholder')}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Collapsed-tab vertical handle
+// ─────────────────────────────────────────────
+function CollapsedTab({
+  label,
+  onExpand,
+}: {
+  label: string
+  onExpand: () => void
+}) {
+  return (
+    <button
+      onClick={onExpand}
+      style={{
+        width: '36px',
+        background: 'var(--bg-secondary)',
+        borderLeft: '1px solid var(--border-subtle)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        border: 'none',
+        flexShrink: 0,
+      }}
+      aria-label="Expand panel"
+    >
+      <span
+        style={{
+          writingMode: 'vertical-rl',
+          fontFamily: 'var(--font-serif)',
+          fontStyle: 'italic',
+          fontSize: '11px',
+          color: 'var(--text-secondary)',
+          letterSpacing: '0.02em',
+        }}
+      >
+        {label}
+      </span>
+    </button>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Settings (now full-width center panel for SETTINGS group)
+// ─────────────────────────────────────────────
+const KEYBOARD_SHORTCUTS: Array<{ keys: string; labelKey: string }> = [
+  { keys: '⌘ K', labelKey: 'settings.shortcut.palette' },
+  { keys: '⌘ N', labelKey: 'settings.shortcut.newSession' },
+  { keys: '⌘ 1', labelKey: 'rail.markets' },
+  { keys: '⌘ 2', labelKey: 'rail.learning' },
+  { keys: '⌘ 3', labelKey: 'rail.settings' },
+  { keys: '⌘ B', labelKey: 'settings.shortcut.toggleLeft' },
+  { keys: '⌘ G', labelKey: 'settings.shortcut.toggleRight' },
+]
+
+function SettingsCenterPanel({
+  colorMode,
+  onSetColorMode,
+  lang,
+  onSetLang,
+}: {
+  colorMode: PriceColorMode
+  onSetColorMode: (mode: PriceColorMode) => void
+  lang: Language
+  onSetLang: (l: Language) => void
+}) {
+  const { t } = useT()
+  return (
+    <div
+      style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '32px 40px',
+        background: 'var(--bg-primary)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '32px',
+        maxWidth: '720px',
+      }}
+    >
+      {/* Language */}
+      <SettingsSection labelKey="settings.lang.label">
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {(['jp', 'en'] as Language[]).map((option) => {
+            const active = lang === option
+            const labelKey = option === 'jp' ? 'settings.lang.jp' : 'settings.lang.en'
+            return (
+              <button
+                key={option}
+                onClick={() => onSetLang(option)}
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  background: active ? 'var(--bg-tertiary)' : 'transparent',
+                  border: '1px solid',
+                  borderColor: active
+                    ? 'var(--accent-gold)'
+                    : 'var(--border-subtle)',
+                  cursor: 'pointer',
+                  transition: 'all 150ms',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '11px',
+                  fontWeight: 500,
+                  letterSpacing: '0.06em',
+                  color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                }}
+              >
+                {t(labelKey as any)}
+              </button>
+            )
+          })}
+        </div>
+      </SettingsSection>
+
+      {/* Price color */}
+      <SettingsSection labelKey="settings.colorMode.label">
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {(['jp', 'en'] as PriceColorMode[]).map((mode) => {
+            const active = colorMode === mode
+            const labelKey =
+              mode === 'jp' ? 'settings.colorMode.jp' : 'settings.colorMode.en'
+            return (
+              <button
+                key={mode}
+                onClick={() => onSetColorMode(mode)}
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  background: active ? 'var(--bg-tertiary)' : 'transparent',
+                  border: '1px solid',
+                  borderColor: active
+                    ? 'var(--accent-gold)'
+                    : 'var(--border-subtle)',
+                  cursor: 'pointer',
+                  transition: 'all 150ms',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color:
+                        mode === 'jp' ? 'var(--price-up)' : 'var(--price-up-western)',
+                    }}
+                  >
+                    ▲
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color:
+                        mode === 'jp'
+                          ? 'var(--price-down)'
+                          : 'var(--price-down-western)',
+                    }}
+                  >
+                    ▼
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '10px',
+                    fontWeight: 500,
+                    color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                    letterSpacing: '0.06em',
+                  }}
+                >
+                  {t(labelKey as any)}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        <p
+          style={{
+            margin: '8px 0 0',
+            fontFamily: 'var(--font-serif)',
+            fontStyle: 'italic',
+            fontSize: '11px',
+            color: 'var(--text-tertiary)',
+            lineHeight: 1.6,
+          }}
+        >
+          {colorMode === 'jp'
+            ? t('settings.colorMode.descJp')
+            : t('settings.colorMode.descEn')}
+        </p>
+      </SettingsSection>
+
+      {/* Shortcuts */}
+      <SettingsSection labelKey="settings.shortcuts.label">
+        <div>
+          {KEYBOARD_SHORTCUTS.map(({ keys, labelKey }) => (
+            <div
+              key={keys}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '6px 0',
+                borderBottom: '1px solid var(--border-subtle)',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '11px',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                {t(labelKey as any)}
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  color: 'var(--text-tertiary)',
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-subtle)',
+                  padding: '2px 6px',
+                }}
+              >
+                {keys}
+              </span>
+            </div>
+          ))}
+        </div>
+      </SettingsSection>
+
+      {/* About */}
+      <SettingsSection labelKey="settings.about">
+        <p
+          style={{
+            margin: 0,
+            fontFamily: 'var(--font-serif)',
+            fontStyle: 'italic',
+            fontSize: '13px',
+            color: 'var(--text-tertiary)',
+            lineHeight: 1.7,
+          }}
+        >
+          Market Lexicon — {t('brand.tagline')}
+        </p>
+      </SettingsSection>
+    </div>
+  )
+}
+
+function SettingsSection({
+  labelKey,
+  children,
+}: {
+  labelKey: string
+  children: React.ReactNode
+}) {
+  const { t } = useT()
+  return (
+    <div>
+      <div
+        style={{
+          fontFamily: 'var(--font-sans)',
+          fontSize: '11px',
+          fontWeight: 500,
+          letterSpacing: '0.10em',
+          textTransform: 'uppercase',
+          color: 'var(--text-tertiary)',
+          marginBottom: '12px',
+        }}
+      >
+        {t(labelKey as any)}
+      </div>
+      {children}
     </div>
   )
 }

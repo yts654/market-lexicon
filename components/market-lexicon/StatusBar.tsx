@@ -1,15 +1,30 @@
 'use client'
 
-type AppMode = 'TRANSCRIPT' | 'CHAT' | 'MARKETS'
+import { useT } from '@/lib/i18n'
+
+type AppGroup = 'MARKETS' | 'LEARNING' | 'SETTINGS'
 
 interface StatusBarProps {
   sessionId: string
-  mode: AppMode
+  group: AppGroup
   termCount: number
   isOnline?: boolean
 }
 
-export function StatusBar({ sessionId, mode, termCount, isOnline = true }: StatusBarProps) {
+export function StatusBar({
+  sessionId,
+  group,
+  termCount,
+  isOnline = true,
+}: StatusBarProps) {
+  const { t } = useT()
+  const groupLabelKey =
+    group === 'MARKETS'
+      ? 'status.mode.markets'
+      : group === 'LEARNING'
+      ? 'status.mode.learning'
+      : 'status.mode.settings'
+
   return (
     <footer
       style={{
@@ -26,7 +41,6 @@ export function StatusBar({ sessionId, mode, termCount, isOnline = true }: Statu
         flexShrink: 0,
       }}
     >
-      {/* Left: Connection Status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <span
           style={{
@@ -45,7 +59,7 @@ export function StatusBar({ sessionId, mode, termCount, isOnline = true }: Statu
             color: 'var(--text-tertiary)',
           }}
         >
-          {isOnline ? 'Connected' : 'Offline'}
+          {isOnline ? t('status.connected') : t('status.offline')}
         </span>
         <span style={{ color: 'var(--border-medium)', margin: '0 4px' }}>·</span>
         <span
@@ -56,11 +70,10 @@ export function StatusBar({ sessionId, mode, termCount, isOnline = true }: Statu
             color: 'var(--text-tertiary)',
           }}
         >
-          Market Lexicon Terminal
+          {t('status.terminal')}
         </span>
       </div>
 
-      {/* Center: Session Info */}
       <div
         style={{
           fontFamily: 'var(--font-serif)',
@@ -76,20 +89,17 @@ export function StatusBar({ sessionId, mode, termCount, isOnline = true }: Statu
         }}
       >
         <span>
-          Session{' '}
+          {t('status.session')}{' '}
           <span style={{ color: 'var(--text-secondary)' }}>{sessionId}</span>
         </span>
         <span style={{ color: 'var(--border-medium)' }}>·</span>
-        <span>
-          {mode === 'MARKETS' ? 'Markets' : mode === 'TRANSCRIPT' ? 'Transcripts' : 'Chat'}
-        </span>
+        <span>{t(groupLabelKey as any)}</span>
         <span style={{ color: 'var(--border-medium)' }}>·</span>
         <span>
-          {termCount} terms
+          {termCount} {t('status.terms')}
         </span>
       </div>
 
-      {/* Right: Attribution */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <span
           style={{
@@ -99,7 +109,7 @@ export function StatusBar({ sessionId, mode, termCount, isOnline = true }: Statu
             color: 'var(--text-muted)',
           }}
         >
-          Data via Twelve Data
+          {t('status.dataVia')}
         </span>
       </div>
     </footer>

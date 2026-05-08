@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Star, FileText, MessageSquare, Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Session, FilterType } from '@/lib/market-lexicon-data'
+import { useT } from '@/lib/i18n'
 
 interface ArchiveSidebarProps {
   sessions: Session[]
@@ -21,6 +22,7 @@ export function ArchiveSidebar({
   collapsed,
   onToggleCollapse,
 }: ArchiveSidebarProps) {
+  const { t } = useT()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterType>('ALL')
 
@@ -88,7 +90,7 @@ export function ArchiveSidebar({
             writingMode: 'vertical-rl',
           }}
         >
-          ARCHIVE
+          {t('archive.title')}
         </div>
       </div>
     )
@@ -117,7 +119,7 @@ export function ArchiveSidebar({
           flexShrink: 0,
         }}
       >
-        <span className="label-caps">ARCHIVE</span>
+        <span className="label-caps">{t('archive.title')}</span>
         <button
           onClick={onToggleCollapse}
           style={{
@@ -171,7 +173,7 @@ export function ArchiveSidebar({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="SEARCH SESSIONS..."
+            placeholder={t('archive.search.placeholder')}
             style={{
               background: 'transparent',
               border: 'none',
@@ -226,7 +228,13 @@ export function ArchiveSidebar({
               }
             }}
           >
-            {f === 'TRANSCRIPTS' ? 'TRANS' : f === 'FAVORITES' ? 'FAV' : f}
+            {f === 'ALL'
+              ? t('archive.filter.all')
+              : f === 'TRANSCRIPTS'
+              ? t('archive.filter.transcripts')
+              : f === 'CHATS'
+              ? t('archive.filter.chats')
+              : t('archive.filter.favorites')}
           </button>
         ))}
       </div>
@@ -247,7 +255,7 @@ export function ArchiveSidebar({
             letterSpacing: '0.08em',
           }}
         >
-          {filtered.length} SESSION{filtered.length !== 1 ? 'S' : ''} FOUND
+          {filtered.length} {t('archive.found')}
         </span>
       </div>
 
@@ -266,7 +274,7 @@ export function ArchiveSidebar({
           >
             ─────────────────
             <br />
-            NO SESSIONS FOUND
+            {t('archive.empty')}
             <br />─────────────────
           </div>
         ) : (
@@ -306,7 +314,7 @@ export function ArchiveSidebar({
           onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '#58A6FF')}
         >
           <Plus size={10} />
-          NEW SESSION
+          {t('archive.newSession')}
         </button>
       </div>
     </aside>

@@ -188,29 +188,32 @@ export const dict: Dict = {
   'instrument.stats.volume': { jp: '出来高', en: 'Volume' },
   'instrument.stats.avgVolume': { jp: '平均出来高(10日)', en: 'Avg Vol (10D)' },
 
-  // ─── Why It Moved Today (MoverExplanation) ───
+  // ─── Today's Headlines (MoverExplanation panel) ───
   'movers.title': {
-    jp: '本日の値動き要因',
-    en: 'Why It Moved Today',
+    jp: '本日の関連ニュース',
+    en: "Today's Headlines",
   },
   'movers.subtitle': {
-    jp: '世界のニュースに基づくAI解説',
-    en: 'AI commentary grounded in global headlines',
+    jp: '世界の金融ニュースから自動収集',
+    en: 'Auto-curated from global financial sources',
   },
   'movers.loading': {
-    jp: 'ニュースを取得し、解説を生成しています…',
-    en: 'Fetching headlines and generating commentary…',
+    jp: 'ニュースを取得しています…',
+    en: 'Fetching headlines…',
+  },
+  'movers.empty': {
+    jp: '本日の関連ニュースは見つかりませんでした。',
+    en: 'No headlines found for this instrument today.',
   },
   'movers.error': {
-    jp: '解説の取得に失敗しました。',
-    en: 'Unable to load commentary.',
+    jp: 'ニュースの取得に失敗しました。',
+    en: 'Unable to load headlines.',
   },
-  'movers.missingKey.title': {
-    jp: 'この機能を有効化するには、Vercelの環境変数に Anthropic APIキーを設定してください。',
-    en: 'To enable this section, set the Anthropic API key in your Vercel project environment variables.',
+  'movers.poweredBy': {
+    jp: 'Source: Google News',
+    en: 'Source: Google News',
   },
-  'movers.sources': { jp: '引用元', en: 'Sources' },
-  'movers.generatedAt': { jp: '生成時刻:', en: 'Generated:' },
+  'movers.fetchedAt': { jp: '取得時刻:', en: 'Fetched:' },
 }
 
 export type DictKey = keyof typeof dict

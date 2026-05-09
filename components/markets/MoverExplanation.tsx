@@ -4,24 +4,40 @@ import { useEffect, useState } from 'react'
 import { useT } from '@/lib/i18n'
 import type { Instrument } from '@/lib/market-data'
 
-interface ExplainResponse {
+interface NewsItem {
+  title: string
+  link: string
+  pubDate: string
+  source?: string
+}
+
+interface HeadlinesResponse {
   symbol: string
-  changePct?: number
-  explanation: string
-  sources: { title: string; url: string }[]
-  generatedAt: string
+  items: NewsItem[]
+  fetchedAt: string
 }
 
 interface MoverExplanationProps {
   instrument: Instrument
 }
 
-type Status = 'idle' | 'loading' | 'ready' | 'missing_key' | 'error'
+type Status = 'loading' | 'ready' | 'empty' | 'error'
+
+function formatPubDate(pubDate: string, lang: string): string {
+  const d = new Date(pubDate)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleString(lang === 'jp' ? 'ja-JP' : 'en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 export function MoverExplanation({ instrument }: MoverExplanationProps) {
   const { t, lang } = useT()
-  const [status, setStatus] = useState<Status>('idle')
-  const [data, setData] = useState<ExplainResponse | null>(null)
+  const [status, setStatus] = useState<Status>('loading')
+  const [data, setData] = useState<HeadlinesResponse | null>(null)
   const [errorMsg, setErrorMsg] = useState<string>('')
 
   useEffect(() => {
@@ -34,26 +50,21 @@ export function MoverExplanation({ instrument }: MoverExplanationProps) {
         const res = await fetch('/api/market-explain', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            symbol: instrument.symbol,
-            name: instrument.name,
-            changePct: instrument.changePct,
-            lang,
-          }),
+          body: JSON.stringify({ symbol: instrument.symbol, lang }),
         })
         if (cancelled) return
-        if (res.status === 503) {
-          setStatus('missing_key')
-          return
-        }
         if (!res.ok) {
           const err = await res.json().catch(() => ({}))
           setErrorMsg(err.message || `HTTP ${res.status}`)
           setStatus('error')
           return
         }
-        const json = (await res.json()) as ExplainResponse
+        const json = (await res.json()) as HeadlinesResponse
         if (cancelled) return
+        if (!json.items || json.items.length === 0) {
+          setStatus('empty')
+          return
+        }
         setData(json)
         setStatus('ready')
       } catch (e) {
@@ -66,9 +77,6 @@ export function MoverExplanation({ instrument }: MoverExplanationProps) {
     return () => {
       cancelled = true
     }
-    // Re-fetch when the symbol or language changes; ignore live ticker
-    // changePct fluctuations to avoid re-querying every second.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instrument.symbol, lang])
 
   return (
@@ -146,27 +154,18 @@ export function MoverExplanation({ instrument }: MoverExplanationProps) {
           </p>
         )}
 
-        {status === 'missing_key' && (
-          <div
+        {status === 'empty' && (
+          <p
             style={{
               fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
               fontSize: '13px',
               color: 'var(--text-tertiary)',
-              lineHeight: 1.7,
+              margin: 0,
             }}
           >
-            <p style={{ margin: '0 0 8px' }}>{t('movers.missingKey.title')}</p>
-            <p
-              style={{
-                margin: 0,
-                fontFamily: 'var(--font-mono)',
-                fontSize: '11px',
-                color: 'var(--accent-gold-dim)',
-              }}
-            >
-              ANTHROPIC_API_KEY
-            </p>
-          </div>
+            {t('movers.empty')}
+          </p>
         )}
 
         {status === 'error' && (
@@ -190,98 +189,106 @@ export function MoverExplanation({ instrument }: MoverExplanationProps) {
 
         {status === 'ready' && data && (
           <>
-            {data.explanation
-              .split(/\n\n+/)
-              .filter((p) => p.trim())
-              .map((para, i) => (
-                <p
+            <ul
+              style={{
+                listStyle: 'none',
+                padding: 0,
+                margin: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+              }}
+            >
+              {data.items.map((item, i) => (
+                <li
                   key={i}
                   style={{
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: '14px',
-                    color: 'var(--text-primary)',
-                    lineHeight: 1.8,
-                    margin: i === 0 ? '0 0 12px' : '0 0 12px',
+                    paddingBottom: i === data.items.length - 1 ? 0 : '14px',
+                    borderBottom:
+                      i === data.items.length - 1
+                        ? 'none'
+                        : '1px solid var(--border-subtle)',
                   }}
                 >
-                  {para}
-                </p>
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    style={{
+                      display: 'block',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                    }}
+                    onMouseEnter={(e) => {
+                      const title = (e.currentTarget as HTMLElement).querySelector(
+                        '[data-news-title]'
+                      ) as HTMLElement | null
+                      if (title) title.style.color = 'var(--accent-gold)'
+                    }}
+                    onMouseLeave={(e) => {
+                      const title = (e.currentTarget as HTMLElement).querySelector(
+                        '[data-news-title]'
+                      ) as HTMLElement | null
+                      if (title) title.style.color = 'var(--text-primary)'
+                    }}
+                  >
+                    <div
+                      data-news-title
+                      style={{
+                        fontFamily: 'var(--font-serif)',
+                        fontSize: '15px',
+                        fontWeight: 400,
+                        color: 'var(--text-primary)',
+                        lineHeight: 1.5,
+                        marginBottom: '6px',
+                        transition: 'color 150ms',
+                      }}
+                    >
+                      {item.title}
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '8px',
+                        alignItems: 'center',
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '10px',
+                        color: 'var(--text-tertiary)',
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      {item.source && (
+                        <>
+                          <span>{item.source}</span>
+                          <span style={{ color: 'var(--border-medium)' }}>·</span>
+                        </>
+                      )}
+                      <span>{formatPubDate(item.pubDate, lang)}</span>
+                    </div>
+                  </a>
+                </li>
               ))}
-
-            {data.sources.length > 0 && (
-              <div
-                style={{
-                  marginTop: '20px',
-                  paddingTop: '16px',
-                  borderTop: '1px solid var(--border-subtle)',
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: 'var(--font-sans)',
-                    fontSize: '10px',
-                    fontWeight: 500,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: 'var(--text-tertiary)',
-                    marginBottom: '8px',
-                  }}
-                >
-                  {t('movers.sources')}
-                </div>
-                <ul
-                  style={{
-                    listStyle: 'none',
-                    padding: 0,
-                    margin: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                  }}
-                >
-                  {data.sources.map((s, i) => (
-                    <li key={i}>
-                      <a
-                        href={s.url}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        style={{
-                          fontFamily: 'var(--font-serif)',
-                          fontStyle: 'italic',
-                          fontSize: '12px',
-                          color: 'var(--text-secondary)',
-                          textDecoration: 'none',
-                          lineHeight: 1.5,
-                        }}
-                        onMouseEnter={(e) => {
-                          ;(e.currentTarget as HTMLElement).style.color =
-                            'var(--accent-gold)'
-                        }}
-                        onMouseLeave={(e) => {
-                          ;(e.currentTarget as HTMLElement).style.color =
-                            'var(--text-secondary)'
-                        }}
-                      >
-                        › {s.title}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            </ul>
 
             <div
               style={{
-                marginTop: '12px',
+                marginTop: '20px',
+                paddingTop: '16px',
+                borderTop: '1px solid var(--border-subtle)',
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
                 color: 'var(--text-muted)',
+                display: 'flex',
+                justifyContent: 'space-between',
               }}
             >
-              {t('movers.generatedAt')}{' '}
-              {new Date(data.generatedAt).toLocaleString(
-                lang === 'jp' ? 'ja-JP' : 'en-US'
-              )}
+              <span>{t('movers.poweredBy')}</span>
+              <span>
+                {t('movers.fetchedAt')}{' '}
+                {new Date(data.fetchedAt).toLocaleString(
+                  lang === 'jp' ? 'ja-JP' : 'en-US'
+                )}
+              </span>
             </div>
           </>
         )}

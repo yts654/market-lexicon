@@ -63,6 +63,11 @@ export const dict: Dict = {
     en: 'NO SESSIONS FOUND',
   },
   'archive.newSession': { jp: '＋ 新規セッション', en: '+ NEW SESSION' },
+  'archive.delete.aria': { jp: 'セッションを削除', en: 'Delete session' },
+  'archive.delete.confirm': {
+    jp: 'このセッションを削除しますか？',
+    en: 'Delete this session?',
+  },
 
   // ─── Right Panel Tabs ───
   'tab.markets': { jp: 'マーケット', en: 'Markets' },

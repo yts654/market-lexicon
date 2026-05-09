@@ -86,6 +86,16 @@ export default function Page() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  const handleDeleteSession = (id: string) => {
+    setSessions((prev) => {
+      const next = prev.filter((s) => s.id !== id)
+      if (activeSessionId === id) {
+        setActiveSessionId(next[0]?.id ?? '')
+      }
+      return next
+    })
+  }
+
   const handleNewSession = () => {
     const newId = `#${String(sessions[0].idNum + 1).padStart(4, '0')}`
     const newSession: Session = {
@@ -156,6 +166,7 @@ export default function Page() {
               activeSessionId={activeSessionId}
               onSelectSession={setActiveSessionId}
               onNewSession={handleNewSession}
+              onDeleteSession={handleDeleteSession}
               collapsed={archiveCollapsed}
               onToggleCollapse={() => setArchiveCollapsed((v) => !v)}
             />

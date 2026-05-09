@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Star, FileText, MessageSquare, Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Star, FileText, MessageSquare, Search, Plus, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import { Session, FilterType } from '@/lib/market-lexicon-data'
 import { useT } from '@/lib/i18n'
 
@@ -10,6 +10,7 @@ interface ArchiveSidebarProps {
   activeSessionId: string
   onSelectSession: (id: string) => void
   onNewSession: () => void
+  onDeleteSession: (id: string) => void
   collapsed: boolean
   onToggleCollapse: () => void
 }
@@ -19,6 +20,7 @@ export function ArchiveSidebar({
   activeSessionId,
   onSelectSession,
   onNewSession,
+  onDeleteSession,
   collapsed,
   onToggleCollapse,
 }: ArchiveSidebarProps) {
@@ -284,6 +286,7 @@ export function ArchiveSidebar({
               session={session}
               active={session.id === activeSessionId}
               onClick={() => onSelectSession(session.id)}
+              onDelete={() => onDeleteSession(session.id)}
             />
           ))
         )}
@@ -325,12 +328,23 @@ function SessionCard({
   session,
   active,
   onClick,
+  onDelete,
 }: {
   session: Session
   active: boolean
   onClick: () => void
+  onDelete: () => void
 }) {
+  const { t } = useT()
   const [hovered, setHovered] = useState(false)
+  const [trashHovered, setTrashHovered] = useState(false)
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (window.confirm(t('archive.delete.confirm'))) {
+      onDelete()
+    }
+  }
 
   return (
     <div
@@ -410,13 +424,47 @@ function SessionCard({
             </span>
           </div>
         </div>
-        {/* Star */}
-        {session.starred && (
-          <Star
-            size={10}
-            style={{ color: '#58A6FF', fill: '#58A6FF', flexShrink: 0, marginTop: '2px' }}
-          />
-        )}
+        {/* Star + Trash (trash visible on hover) */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            flexShrink: 0,
+            marginTop: '2px',
+          }}
+        >
+          {hovered && (
+            <button
+              onClick={handleDelete}
+              onMouseEnter={() => setTrashHovered(true)}
+              onMouseLeave={() => setTrashHovered(false)}
+              aria-label={t('archive.delete.aria')}
+              title={t('archive.delete.aria')}
+              style={{
+                width: '18px',
+                height: '18px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                color: trashHovered ? '#FF6B6B' : '#666666',
+                transition: 'color 120ms',
+              }}
+            >
+              <Trash2 size={11} />
+            </button>
+          )}
+          {session.starred && (
+            <Star
+              size={10}
+              style={{ color: '#58A6FF', fill: '#58A6FF', flexShrink: 0 }}
+            />
+          )}
+        </div>
       </div>
     </div>
   )

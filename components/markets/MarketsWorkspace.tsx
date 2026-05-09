@@ -670,7 +670,7 @@ export function MarketsWorkspace({ instruments, colorMode, onToggleColorMode }: 
             background: 'var(--bg-primary)',
             overflow: 'auto',
             flexShrink: 0,
-            alignContent: 'center',
+            alignContent: 'start',
             justifyContent: 'center'
           }}
         >

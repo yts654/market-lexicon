@@ -56,8 +56,9 @@ function InstrumentTile({ instrument, selected, onSelect, colorMode, isUpdating 
       }}
       className={isUpdating ? 'value-updating' : ''}
       style={{
-        width: '152px',
-        height: '92px',
+        width: '100%',
+        height: '100%',
+        minHeight: '92px',
         background: selected ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
         border: 'none',
         borderLeft: selected ? '1px solid var(--accent-gold)' : '1px solid var(--border-subtle)',
@@ -663,15 +664,13 @@ export function MarketsWorkspace({ instruments, colorMode, onToggleColorMode }: 
             width: '60%',
             minWidth: '608px',
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 152px)',
-            gridTemplateRows: 'repeat(4, 92px)',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateRows: 'repeat(4, 1fr)',
             gap: '1px',
             padding: '16px',
             background: 'var(--bg-primary)',
             overflow: 'auto',
             flexShrink: 0,
-            alignContent: 'start',
-            justifyContent: 'center'
           }}
         >
           {liveInstruments.map(inst => (

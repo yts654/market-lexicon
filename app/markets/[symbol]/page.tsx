@@ -16,6 +16,7 @@ import {
 } from '@/lib/market-data'
 import { getInstrumentEducation, getRelatedInstruments, EDUCATION_SECTION_LABELS } from '@/lib/instrument-education'
 import { useT } from '@/lib/i18n'
+import { MoverExplanation } from '@/components/markets/MoverExplanation'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Page Component
@@ -155,6 +156,9 @@ export default function InstrumentDetailPage() {
             <StatsRegion instrument={liveInstrument} colorMode={colorMode} />
           </div>
         </div>
+
+        {/* Why It Moved Today */}
+        <MoverExplanation instrument={liveInstrument} />
 
         {/* Educational Content */}
         <EducationalContent
@@ -1001,7 +1005,7 @@ function EducationalContent({
             padding: '0 16px'
           }}
         >
-          II
+          III
         </span>
         <div style={{ flex: 1, height: '1px', background: 'var(--border-medium)' }} />
       </div>

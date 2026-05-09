@@ -187,6 +187,30 @@ export const dict: Dict = {
   'instrument.stats.week52Low': { jp: '52週安値', en: '52W Low' },
   'instrument.stats.volume': { jp: '出来高', en: 'Volume' },
   'instrument.stats.avgVolume': { jp: '平均出来高(10日)', en: 'Avg Vol (10D)' },
+
+  // ─── Why It Moved Today (MoverExplanation) ───
+  'movers.title': {
+    jp: '本日の値動き要因',
+    en: 'Why It Moved Today',
+  },
+  'movers.subtitle': {
+    jp: '世界のニュースに基づくAI解説',
+    en: 'AI commentary grounded in global headlines',
+  },
+  'movers.loading': {
+    jp: 'ニュースを取得し、解説を生成しています…',
+    en: 'Fetching headlines and generating commentary…',
+  },
+  'movers.error': {
+    jp: '解説の取得に失敗しました。',
+    en: 'Unable to load commentary.',
+  },
+  'movers.missingKey.title': {
+    jp: 'この機能を有効化するには、Vercelの環境変数に Anthropic APIキーを設定してください。',
+    en: 'To enable this section, set the Anthropic API key in your Vercel project environment variables.',
+  },
+  'movers.sources': { jp: '引用元', en: 'Sources' },
+  'movers.generatedAt': { jp: '生成時刻:', en: 'Generated:' },
 }
 
 export type DictKey = keyof typeof dict
